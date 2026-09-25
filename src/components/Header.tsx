@@ -17,7 +17,7 @@ export const Header: React.FC = () => {
           <div className="w-1.5 h-1.5 bg-[#56b8f8]" />
         </div>
         <div>
-          <div className="text-[13px] font-semibold tracking-[0.12em] text-[#e2ebf1] leading-tight">AUTOFLEET <span className="text-[#506678] font-normal">/ SIH26123</span></div>
+          <div className="text-[13px] font-semibold tracking-[0.12em] text-[#e2ebf1] leading-tight">FLEETIO <span className="text-[#506678] font-normal">/ SIH26123</span></div>
           <div className="text-[9px] uppercase tracking-[0.15em] text-[#71879a] leading-tight">Operations · Warehouse 01</div>
         </div>
       </div>

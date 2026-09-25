@@ -18,7 +18,7 @@ function Metric({ title, value, detail }: { title: string; value: string | numbe
 }
 
 function SectionTitle({ title, detail }: { title: string; detail: string }) {
-  return <div className="mb-8 flex flex-wrap items-end justify-between gap-3"><div><div className={label}>AUTOFLEET / OPS</div><h1 className={`${heading} mt-2`}>{title}</h1></div><div className="font-mono text-[10px] uppercase tracking-wider text-[#607789]">{detail}</div></div>;
+  return <div className="mb-8 flex flex-wrap items-end justify-between gap-3"><div><div className={label}>FLEETIO / OPS</div><h1 className={`${heading} mt-2`}>{title}</h1></div><div className="font-mono text-[10px] uppercase tracking-wider text-[#607789]">{detail}</div></div>;
 }
 
 export function OverviewView() {
