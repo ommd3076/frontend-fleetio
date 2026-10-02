@@ -1,0 +1,53 @@
+/* Interpolate presentation values without changing simulation cadence or semantics. */
+.fleet-app :is(.battery-track, .progress-track) > div {
+  transition:
+    width var(--motion-data) var(--ease-settle),
+    background-color var(--motion-control) var(--ease-settle);
+}
+
+@keyframes fleet-bar-arrive {
+  from { opacity: .35; transform: scaleY(.92); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+
+.fleet-app .bar-chart > div {
+  transform-origin: center bottom;
+  transition: height var(--motion-data) var(--ease-settle);
+  animation: fleet-bar-arrive var(--motion-panel) var(--ease-settle);
+}
+
+@keyframes fleet-event-arrive {
+  from { opacity: .35; background-color: #4b9aca15; }
+  to { opacity: 1; background-color: transparent; }
+}
+
+.fleet-app .event-row {
+  /* Stable event keys trigger this once per arrival, never on every worker tick. */
+  animation: fleet-event-arrive var(--motion-data) var(--ease-settle);
+}
+
+.fleet-app .wait-chart :is(polyline, polygon) {
+  /* No path morphing: chart samples retain their real worker-published positions. */
+  animation: fleet-surface-enter var(--motion-panel) var(--ease-settle);
+}
+
+.fleet-app .route-minimap {
+  transition: border-color var(--motion-control) var(--ease-settle);
+}
+
+.fleet-app .route-minimap:focus-visible {
+  outline: 2px solid #85caff;
+  outline-offset: 3px;
+}
+
+.fleet-app .utilization-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.fleet-app .utilization-value {
+  transition: stroke-dasharray var(--motion-data) var(--ease-settle);
+}

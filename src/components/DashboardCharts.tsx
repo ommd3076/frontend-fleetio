@@ -6,7 +6,7 @@ export function ThroughputChart({ expanded = false }: { expanded?: boolean }) {
   const { throughput, history } = useStore(useShallow(state => ({ throughput: state.metrics.throughput, history: state.metricHistory })));
   const samples = history.slice(-16), max = Math.max(1, ...samples.map(sample => sample.throughput));
   return <section className={`dashboard-card chart-card ${expanded ? 'expanded-chart' : ''}`}><h3>Task Throughput</h3><div className="chart-number">{Math.round(throughput)}<small>/ hr</small></div><div className="bar-chart" role="img" aria-label={`Measured task throughput: ${throughput.toFixed(1)} per simulation hour`}>
-    {samples.length ? samples.map((sample, index) => <div key={`${sample.time}-${index}`} style={{ height: `${Math.max(2, sample.throughput / max * 100)}%` }} title={`${sample.time.toFixed(0)}s: ${sample.throughput.toFixed(1)} tasks/hr`} />) : <span className="chart-empty">Awaiting completed tasks</span>}
+    {samples.length ? samples.map(sample => <div key={sample.time} style={{ height: `${Math.max(2, sample.throughput / max * 100)}%` }} title={`${sample.time.toFixed(0)}s: ${sample.throughput.toFixed(1)} tasks/hr`} />) : <span className="chart-empty">Awaiting completed tasks</span>}
   </div></section>;
 }
 export function UtilizationChart({ expanded = false }: { expanded?: boolean }) {
@@ -15,7 +15,8 @@ export function UtilizationChart({ expanded = false }: { expanded?: boolean }) {
   const idle = fleet.filter(robot => robot.state === 'IDLE').length, charging = fleet.filter(robot => robot.state === 'CHARGING').length;
   const failed = fleet.filter(robot => robot.state === 'FAILED').length;
   const value = total ? Math.round(active / total * 100) : 0;
-  return <section className={`dashboard-card chart-card ${expanded ? 'expanded-chart' : ''}`}><h3>Robot Utilization</h3><div className="utilization-body"><div className="donut" style={{ background: `conic-gradient(#4fd4a8 0 ${value}%, #273442 ${value}% 100%)` }} role="img" aria-label={`${value}% of robots are active, including waiting tasks`}><span>{value}%</span></div><div className="chart-legend"><div><i className="green" />Active <b>{active}</b></div><div><i className="amber" />Idle <b>{idle}</b></div><div><i className="blue" />Charging <b>{charging}</b></div>{failed > 0 && <div><i className="red" />Failed <b>{failed}</b></div>}</div></div></section>;
+  const circumference = 2 * Math.PI * 42;
+  return <section className={`dashboard-card chart-card ${expanded ? 'expanded-chart' : ''}`}><h3>Robot Utilization</h3><div className="utilization-body"><div className="donut" role="img" aria-label={`${value}% of robots are active, including waiting tasks`}><svg className="utilization-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="#273442" strokeWidth="12" /><circle className="utilization-value" cx="50" cy="50" r="42" fill="none" stroke="#4fd4a8" strokeWidth="12" strokeDasharray={`${circumference * value / 100} ${circumference}`} transform="rotate(-90 50 50)" /></svg><span>{value}%</span></div><div className="chart-legend"><div><i className="green" />Active <b>{active}</b></div><div><i className="amber" />Idle <b>{idle}</b></div><div><i className="blue" />Charging <b>{charging}</b></div>{failed > 0 && <div><i className="red" />Failed <b>{failed}</b></div>}</div></div></section>;
 }
 function WaitLine({ samples }: { samples: MetricSample[] }) {
   const max = Math.max(1, ...samples.map(sample => sample.wait));
