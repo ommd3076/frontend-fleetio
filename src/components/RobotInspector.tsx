@@ -26,4 +26,8 @@ function RobotDetails() {
     <div className="inspector-section robot-actions"><button className={`button full-width ${robot.failed ? 'green-button' : 'danger-soft'}`} onClick={() => sendCommand({ type: robot.failed ? 'RECOVER_ROBOT' : 'FAIL_ROBOT', robotId: robot.id })}>{robot.failed ? 'Recover Robot' : 'Simulate Robot Failure'}</button></div>
   </div>;
 }
-export function RobotInspector() { const selectedJecId = useStore(state => state.selectedJecId); return selectedJecId ? <JecInspector /> : <RobotDetails />; }
+export function RobotInspector() {
+  const selectedJecId = useStore(state => state.selectedJecId);
+  const selectedRobotId = useStore(state => state.selectedRobotId);
+  return selectedJecId ? <JecInspector key={selectedJecId} /> : <RobotDetails key={selectedRobotId ?? 'empty'} />;
+}

@@ -11,13 +11,13 @@ function WallClock() {
   return <div className="wall-clock"><time>{now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}</time><span>{now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>;
 }
 function FleetSearch() {
-  const [query, setQuery] = useState(''); const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState(''); const [open, setOpen] = useState(false); const [activeIndex, setActiveIndex] = useState(0);
   const robots = useStore(state => open ? state.robots : null);
   const tasks = useStore(state => open ? state.tasks : null);
   const jecs = useStore(state => open ? state.jecs : null);
   const input = useRef<HTMLInputElement>(null); const container = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const keys = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); input.current?.focus(); setOpen(true); } if (event.key === 'Escape') setOpen(false); };
+    const keys = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); input.current?.focus(); setActiveIndex(0); setOpen(true); } if (event.key === 'Escape') setOpen(false); };
     const outside = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false); };
     window.addEventListener('keydown', keys); window.addEventListener('pointerdown', outside);
     return () => { window.removeEventListener('keydown', keys); window.removeEventListener('pointerdown', outside); };
@@ -33,18 +33,24 @@ function FleetSearch() {
     ];
     return candidates.filter(hit => !needle || `${hit.label} ${hit.detail}`.toLowerCase().includes(needle)).slice(0, 8);
   }, [query, open, robots, tasks, jecs]);
+  const currentIndex = Math.min(activeIndex, Math.max(0, hits.length - 1));
+  const optionId = (hit: typeof hits[number]) => `fleet-search-${hit.kind}-${hit.id}`;
   const select = (hit: typeof hits[number]) => {
     const state = useStore.getState(); state.setActiveView('Live');
     if (hit.kind === 'robot') { state.setSelectedRobot(hit.id); state.setCamera('follow'); }
     else if (hit.kind === 'jec') { const jec = state.jecs.find(item => item.id === hit.id); if (jec) state.focusNode(jec.resourceId); state.setSelectedJec(hit.id); }
     else if (hit.kind === 'task') { const task = state.tasks[hit.id]; if (task?.assignedRobotId) { state.setSelectedRobot(task.assignedRobotId); state.setCamera('follow'); } else if (task) state.focusNode(task.pickupNodeId); }
     else state.focusNode(hit.id);
-    setQuery(''); setOpen(false); input.current?.blur();
+    setQuery(''); setOpen(false); setActiveIndex(0); input.current?.blur();
   };
   return <div className="fleet-search" ref={container}>
-    <Search size={16} aria-hidden="true" /><input ref={input} aria-label="Search robots, tasks, JECs and stations" placeholder="Search fleet…" value={query} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setOpen(true); }} onKeyDown={event => { if (event.key === 'Enter' && hits[0]) select(hits[0]); }} />
+    <Search size={16} aria-hidden="true" /><input ref={input} role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls={open ? 'fleet-search-results' : undefined} aria-activedescendant={open && hits[currentIndex] ? optionId(hits[currentIndex]) : undefined} aria-label="Search robots, tasks, JECs and stations" placeholder="Search fleet…" value={query} onFocus={() => { setActiveIndex(0); setOpen(true); }} onChange={event => { setQuery(event.target.value); setActiveIndex(0); setOpen(true); }} onKeyDown={event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); if (hits.length) setActiveIndex((currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + hits.length) % hits.length); }
+      if (event.key === 'Enter' && open && hits[currentIndex]) { event.preventDefault(); select(hits[currentIndex]); }
+      if (event.key === 'Tab') setOpen(false);
+    }} />
     {query ? <button className="icon-button search-clear" aria-label="Clear search" onClick={() => { setQuery(''); input.current?.focus(); }}><X size={13} /></button> : <kbd>⌘ K</kbd>}
-    {open && <div className="search-results" role="listbox" aria-label="Search results">{hits.length ? hits.map(hit => { const Icon = hit.kind === 'robot' ? Bot : hit.kind === 'task' ? ClipboardList : hit.kind === 'jec' ? Radio : MapPin; return <button key={`${hit.kind}-${hit.id}`} role="option" aria-selected="false" onClick={() => select(hit)}><Icon size={16} /><span><strong>{hit.label}</strong><small>{hit.detail}</small></span><span className="search-kind">{hit.kind}</span></button>; }) : <div className="search-empty">No matches. Try R01, T001, JEC or Packing.</div>}</div>}
+    {open && <div id="fleet-search-results" className="search-results" role="listbox" aria-label="Search results">{hits.length ? hits.map((hit, index) => { const Icon = hit.kind === 'robot' ? Bot : hit.kind === 'task' ? ClipboardList : hit.kind === 'jec' ? Radio : MapPin; return <button id={optionId(hit)} key={`${hit.kind}-${hit.id}`} role="option" aria-selected={index === currentIndex} tabIndex={-1} onMouseEnter={() => setActiveIndex(index)} onClick={() => select(hit)}><Icon size={16} /><span><strong>{hit.label}</strong><small>{hit.detail}</small></span><span className="search-kind">{hit.kind}</span></button>; }) : <div className="search-empty">No matches. Try R01, T001, JEC or Packing.</div>}</div>}
   </div>;
 }
 export function Header() {
