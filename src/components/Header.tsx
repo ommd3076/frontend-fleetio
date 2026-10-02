@@ -1,83 +1,57 @@
-import React from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Box, Search, X, Bot, MapPin, ClipboardList, Radio } from 'lucide-react';
 import { useStore } from '../store';
-import { Play, Pause, RotateCcw } from 'lucide-react';
-export const Header: React.FC = () => {
-  const { simulationStatus, togglePlay, setSpeed, speedMultiplier, metrics, resetSim, activeView, setActiveView } = useStore();
-  
-  const formatTime = (time: number) => {
-    const mins = Math.floor(time / 60);
-    const secs = (time % 60).toFixed(1);
-    return `T+ ${mins.toString().padStart(2, '0')}:${secs.padStart(4, '0')}`;
-  };
+import { WAREHOUSE_LAYOUT } from '../simulation/layout';
+import type { ActiveView } from '../types';
 
-  return (
-    <header className="h-[clamp(56px,6vh,64px)] shrink-0 bg-[#07111f] border-b border-[#192a37] flex items-center justify-between px-[clamp(16px,1.5vw,32px)] select-none">
-      <div className="flex items-center space-x-3 w-[clamp(205px,13vw,270px)]">
-        <div className="w-5 h-5 border border-[#56b8f8] rotate-45 flex items-center justify-center">
-          <div className="w-1.5 h-1.5 bg-[#56b8f8]" />
-        </div>
-        <div>
-          <div className="text-[13px] font-semibold tracking-[0.12em] text-[#e2ebf1] leading-tight">FLEETIO <span className="text-[#506678] font-normal">/ SIH26123</span></div>
-          <div className="text-[9px] uppercase tracking-[0.15em] text-[#71879a] leading-tight">Operations · Warehouse 01</div>
-        </div>
-      </div>
-      
-      <div className="flex-1 flex justify-center space-x-[clamp(16px,2vw,38px)]">
-        {['Overview', 'Fleet', 'Tasks', 'Map', 'Analytics'].map((item) => (
-          <button
-            key={item} 
-            aria-current={activeView === item ? 'page' : undefined}
-            className={`text-[11px] uppercase tracking-[0.12em] py-2 cursor-pointer ${activeView === item ? 'text-[#e5edf2] border-b border-[#54b7f5] font-medium' : 'text-[#71879a] hover:text-[#b6c4ce]'}`}
-            onClick={() => setActiveView(item)}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-      
-      <div className="flex items-center space-x-[clamp(12px,1.4vw,26px)] w-auto justify-end">
-        <div className="flex flex-col items-end">
-          <div className="text-[9px] text-[#71879a] uppercase tracking-wider">Sim Time</div>
-          <div className="font-mono text-[12px] text-[#dce7ed]">{formatTime(metrics.simTime)}</div>
-        </div>
-        
-        <div className="flex flex-col items-end">
-          <div className="text-[9px] text-[#71879a] uppercase tracking-wider">Status</div>
-          <div className="flex items-center space-x-1.5">
-            <div className={`w-2 h-2 rounded-full ${simulationStatus === 'RUNNING' ? 'bg-[#3ED598]' : simulationStatus === 'PAUSED' ? 'bg-[#F2B84B]' : 'bg-[#718198]'}`} />
-            <span className="text-sm text-[#E8EEF6]">
-              {simulationStatus === 'RUNNING' ? 'Running' : simulationStatus === 'PAUSED' ? 'Paused' : 'Stopped'}
-            </span>
-          </div>
-        </div>
-        
-        <div className="flex bg-[#0b1621] border border-[#203241] p-0.5 space-x-0.5">
-          {[0.5, 1, 2].map((s) => (
-            <button
-              key={s}
-              className={`px-2 py-1 text-[10px] font-mono ${speedMultiplier === s ? 'bg-[#19364a] text-[#8ed5ff]' : 'text-[#8397a8] hover:bg-[#132536]'}`}
-              onClick={() => setSpeed(s)}
-            >
-              {s}×
-            </button>
-          ))}
-        </div>
-        
-        <div className="flex items-center gap-1">
-          <button 
-            className="px-3 py-1.5 bg-[#11293a] hover:bg-[#17384e] text-[#dcecf4] text-[10px] font-medium border border-[#24465a] transition-colors flex items-center gap-2"
-            onClick={togglePlay}
-          >
-            {simulationStatus === 'RUNNING' ? <><Pause size={12} /> PAUSE</> : <><Play size={12} /> PLAY</>}
-          </button>
-          <button 
-            className="px-2.5 py-1.5 bg-transparent hover:bg-[#132536] text-[#8397a8] text-[10px] font-medium border border-[#203241] transition-colors flex items-center gap-1.5"
-            onClick={resetSim}
-          >
-            <RotateCcw size={11} /> RESET
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-};
+const views: ActiveView[] = ['Live', 'Analytics', 'Tasks', 'Robots', 'Map', 'Settings'];
+function WallClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 30_000); return () => window.clearInterval(timer); }, []);
+  return <div className="wall-clock"><time>{now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}</time><span>{now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>;
+}
+function FleetSearch() {
+  const [query, setQuery] = useState(''); const [open, setOpen] = useState(false);
+  const robots = useStore(state => open ? state.robots : null);
+  const tasks = useStore(state => open ? state.tasks : null);
+  const jecs = useStore(state => open ? state.jecs : null);
+  const input = useRef<HTMLInputElement>(null); const container = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const keys = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); input.current?.focus(); setOpen(true); } if (event.key === 'Escape') setOpen(false); };
+    const outside = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false); };
+    window.addEventListener('keydown', keys); window.addEventListener('pointerdown', outside);
+    return () => { window.removeEventListener('keydown', keys); window.removeEventListener('pointerdown', outside); };
+  }, []);
+  const hits = useMemo(() => {
+    if (!open) return [];
+    const needle = query.trim().toLowerCase();
+    const candidates = [
+      ...Object.values(robots ?? {}).map(robot => ({ id: robot.id, kind: 'robot', label: robot.id, detail: robot.state.replaceAll('_', ' ').toLowerCase() })),
+      ...Object.values(tasks ?? {}).map(task => ({ id: task.id, kind: 'task', label: task.id, detail: `${task.pickupNodeId} → ${task.dropNodeId}` })),
+      ...(jecs ?? []).map(jec => ({ id: jec.id, kind: 'jec', label: jec.id, detail: jec.online ? 'Junction controller online' : 'Peer fallback active' })),
+      ...WAREHOUSE_LAYOUT.stations.map(station => ({ id: station.id, kind: 'station', label: station.label, detail: station.id })),
+    ];
+    return candidates.filter(hit => !needle || `${hit.label} ${hit.detail}`.toLowerCase().includes(needle)).slice(0, 8);
+  }, [query, open, robots, tasks, jecs]);
+  const select = (hit: typeof hits[number]) => {
+    const state = useStore.getState(); state.setActiveView('Live');
+    if (hit.kind === 'robot') { state.setSelectedRobot(hit.id); state.setCamera('follow'); }
+    else if (hit.kind === 'jec') { const jec = state.jecs.find(item => item.id === hit.id); if (jec) state.focusNode(jec.resourceId); state.setSelectedJec(hit.id); }
+    else if (hit.kind === 'task') { const task = state.tasks[hit.id]; if (task?.assignedRobotId) { state.setSelectedRobot(task.assignedRobotId); state.setCamera('follow'); } else if (task) state.focusNode(task.pickupNodeId); }
+    else state.focusNode(hit.id);
+    setQuery(''); setOpen(false); input.current?.blur();
+  };
+  return <div className="fleet-search" ref={container}>
+    <Search size={16} aria-hidden="true" /><input ref={input} aria-label="Search robots, tasks, JECs and stations" placeholder="Search fleet…" value={query} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setOpen(true); }} onKeyDown={event => { if (event.key === 'Enter' && hits[0]) select(hits[0]); }} />
+    {query ? <button className="icon-button search-clear" aria-label="Clear search" onClick={() => { setQuery(''); input.current?.focus(); }}><X size={13} /></button> : <kbd>⌘ K</kbd>}
+    {open && <div className="search-results" role="listbox" aria-label="Search results">{hits.length ? hits.map(hit => { const Icon = hit.kind === 'robot' ? Bot : hit.kind === 'task' ? ClipboardList : hit.kind === 'jec' ? Radio : MapPin; return <button key={`${hit.kind}-${hit.id}`} role="option" aria-selected="false" onClick={() => select(hit)}><Icon size={16} /><span><strong>{hit.label}</strong><small>{hit.detail}</small></span><span className="search-kind">{hit.kind}</span></button>; }) : <div className="search-empty">No matches. Try R01, T001, JEC or Packing.</div>}</div>}
+  </div>;
+}
+export function Header() {
+  const activeView = useStore(state => state.activeView); const setActiveView = useStore(state => state.setActiveView);
+  return <header className="app-header">
+    <button className="brand" onClick={() => setActiveView('Live')} aria-label="FleetIO live dashboard"><span className="brand-mark"><Box size={25} strokeWidth={1.7} /></span><span><strong>FLEETIO</strong><small>Autonomous warehouse system</small></span></button>
+    <nav className="main-nav" aria-label="Main navigation">{views.map(view => <button key={view} aria-current={view === activeView ? 'page' : undefined} className={view === activeView ? 'active' : ''} onClick={() => setActiveView(view)}>{view}</button>)}</nav>
+    <div className="header-tools"><FleetSearch /><WallClock /><span className="avatar" title="Local visual prototype">F</span></div>
+  </header>;
+}

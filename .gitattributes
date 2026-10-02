@@ -1,0 +1,7 @@
+* text=auto eol=lf
+# Preserve verified source and downloaded model bytes across Windows and Linux.
+src/** -text
+scripts/** -text
+public/models/** -text
+*.jpg binary
+*.png binary

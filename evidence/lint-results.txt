@@ -1,0 +1,11 @@
+
+> fleetio@0.0.0 lint
+> oxlint --format json src scripts
+
+{ "diagnostics": [],
+              "number_of_files": 38,
+              "number_of_rules": 116,
+              "threads_count": 12,
+              "start_time": 0.0719408
+            }
+            

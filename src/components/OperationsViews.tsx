@@ -1,143 +1,42 @@
-import React from 'react';
-import { Activity, Bot, ClipboardList, MapPinned } from 'lucide-react';
+import { ScenarioResults } from './ScenarioResults';
+import { useState } from 'react';
+import { Search, ArrowRight, Bot, Check, Play, Radio, AlertTriangle, SlidersHorizontal } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
-import type { Robot, RobotState, Task } from '../types';
-import { MotionPath } from '../simulation/motionPath';
+import { SCENARIOS } from '../simulation/layout';
+import type { Robot, Task } from '../types';
+import { RobotInspector } from './RobotInspector';
+import { ThroughputChart, UtilizationChart, WaitChart } from './DashboardCharts';
+import { EmptyState, KeyValue, SectionHeading, StateBadge } from './DashboardPrimitives';
+import { nodeLabel, stateLabel } from './dashboardFormatting';
 
-const page = 'h-full overflow-auto bg-[#07111a] px-[clamp(20px,2.5vw,48px)] py-[clamp(22px,3vh,42px)]';
-const label = 'text-[9px] uppercase tracking-[0.19em] text-[#71879a]';
-const heading = 'text-[clamp(22px,1.5vw,30px)] font-light tracking-tight text-[#e2eaf0]';
-const states: RobotState[] = ['IDLE', 'ASSIGNED', 'MOVING_TO_PICKUP', 'PICKING', 'MOVING_TO_DROPOFF', 'DROPPING', 'RETURNING_TO_STAGING', 'WAITING', 'CHARGING'];
-const displayState = (state: RobotState) => state.toLowerCase().replaceAll('_', ' ');
-const displayNode = (id: string) => id.replace('_LEFT_SERVICE', '').replace('_RIGHT_SERVICE', '').replaceAll('_', ' ');
-
-function Metric({ title, value, detail }: { title: string; value: string | number; detail: string }) {
-  return <div className="border-t border-[#20313e] pt-4">
-    <div className={label}>{title}</div><div className="mt-3 text-[clamp(25px,2vw,40px)] font-light text-[#e5edf2]">{value}</div><div className="mt-1 text-[11px] text-[#72889a]">{detail}</div>
-  </div>;
-}
-
-function SectionTitle({ title, detail }: { title: string; detail: string }) {
-  return <div className="mb-8 flex flex-wrap items-end justify-between gap-3"><div><div className={label}>FLEETIO / OPS</div><h1 className={`${heading} mt-2`}>{title}</h1></div><div className="font-mono text-[10px] uppercase tracking-wider text-[#607789]">{detail}</div></div>;
-}
-
-export function OverviewView() {
-  const { robots, tasks, events, metrics, setActiveView, setSelectedRobot } = useStore();
-  const fleet = Object.values(robots);
-  const taskList = Object.values(tasks);
-  const active = fleet.filter(robot => !['IDLE', 'CHARGING'].includes(robot.state));
-  const completed = taskList.filter(task => task.status === 'COMPLETED');
-  return <main className={page}>
-    <SectionTitle title="Operations overview" detail="Current simulation state · Warehouse 01" />
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-7">
-      <Metric title="Tracked units" value={fleet.length} detail={`${active.length} currently active`} />
-      <Metric title="Tasks completed" value={completed.length} detail={`${taskList.filter(task => task.status === 'IN_PROGRESS').length} in progress`} />
-      <Metric title="Tasks queued" value={taskList.filter(task => task.status === 'QUEUED').length} detail="Waiting for an available AMR" />
-      <Metric title="Simulation time" value={`${metrics.simTime.toFixed(1)}s`} detail="Elapsed virtual time" />
-    </div>
-    <div className="mt-10 grid grid-cols-1 2xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.8fr)] gap-10">
-      <section>
-        <div className="flex items-center justify-between border-b border-[#20313e] pb-3"><h2 className={label}>Fleet activity</h2><button onClick={() => setActiveView('Fleet')} className="text-[10px] uppercase tracking-wider text-[#67bff2]">Open fleet →</button></div>
-        {fleet.map(robot => <button key={robot.id} onClick={() => { setSelectedRobot(robot.id); setActiveView('Map'); }} className="w-full grid grid-cols-[70px_minmax(0,1fr)_minmax(90px,0.5fr)] items-center gap-4 py-4 border-b border-[#172733] text-left hover:bg-[#0b1924] px-2">
-          <span className="font-mono text-[12px] text-[#dce7ed]">{robot.id}</span><span className="text-[11px] capitalize text-[#aebdc7]">{displayState(robot.state)}</span><span className="text-right font-mono text-[10px] text-[#72889a]">{robot.velocity.toFixed(1)} m/s</span>
-        </button>)}
-      </section>
-      <section>
-        <div className="border-b border-[#20313e] pb-3"><h2 className={label}>Recent events</h2></div>
-        {events.slice(0, 7).map(event => <div key={event.id} className="grid grid-cols-[55px_42px_minmax(0,1fr)] gap-3 border-b border-[#172733] py-3 font-mono text-[10px]"><span className="text-[#607789]">{event.time.toFixed(1)}s</span><span className="text-[#68c5f3]">{event.text.split(' ')[0]}</span><span className="truncate text-[#aebdc7]">{event.text.split(' ').slice(1).join(' ')}</span></div>)}
-      </section>
-    </div>
-  </main>;
-}
-
+function PageMetric({ label, value, detail }: { label: string; value: string | number; detail: string }) { return <div className="dashboard-card page-metric"><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>; }
+function FilterSearch({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) { return <label className="filter-search"><Search size={16} /><input aria-label={placeholder} placeholder={placeholder} value={value} onChange={event => onChange(event.target.value)} /></label>; }
+function robotCategory(robot: Robot) { return ['FAILED', 'IDLE', 'WAITING', 'CHARGING'].includes(robot.state) ? robot.state : 'ACTIVE'; }
 export function FleetView() {
-  const { robots, tasks, setSelectedRobot, setActiveView } = useStore();
-  const fleet = Object.values(robots);
-  const taskFor = (robot: Robot) => robot.taskId ? tasks[robot.taskId] : undefined;
-  return <main className={page}>
-    <SectionTitle title="Fleet" detail={`${fleet.length} units · Select a row to inspect`} />
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-7 mb-10">
-      <Metric title="Tracked units" value={fleet.length} detail="Present in worker state" />
-      <Metric title="Moving" value={fleet.filter(robot => robot.state.startsWith('MOVING')).length} detail="Traveling between stations" />
-      <Metric title="Working" value={fleet.filter(robot => ['PICKING', 'DROPPING'].includes(robot.state)).length} detail="Handling a package" />
-      <Metric title="Idle" value={fleet.filter(robot => robot.state === 'IDLE').length} detail="Available for work" />
-    </div>
-    <div className="border-y border-[#20313e]">
-      <div className="grid grid-cols-[65px_minmax(100px,1fr)_minmax(100px,1.2fr)_minmax(80px,.7fr)_70px_75px] gap-4 py-3 px-2 text-[8px] uppercase tracking-[0.16em] text-[#607789]"><span>Unit</span><span>State</span><span>Task / route</span><span>Payload</span><span>Battery</span><span className="text-right">Speed</span></div>
-      {fleet.map(robot => {
-        const task = taskFor(robot);
-        return <button key={robot.id} onClick={() => { setSelectedRobot(robot.id); setActiveView('Map'); }} className="grid w-full grid-cols-[65px_minmax(100px,1fr)_minmax(100px,1.2fr)_minmax(80px,.7fr)_70px_75px] gap-4 items-center py-4 px-2 border-t border-[#172733] text-left hover:bg-[#0b1924]">
-          <span className="font-mono text-[11px] text-[#e2eaf0]">{robot.id}</span><span className="text-[11px] capitalize text-[#aebdc7]">{displayState(robot.state)}</span><span className="min-w-0 truncate text-[10px] text-[#8398a8]">{task ? `${displayNode(task.pickupNodeId)} → ${displayNode(task.dropNodeId)}` : 'Awaiting assignment'}</span><span className="text-[10px] text-[#8398a8]">{robot.payload ? 'Loaded' : 'Empty'}</span><span className="font-mono text-[10px] text-[#aebdc7]">{robot.battery.toFixed(1)}%</span><span className="text-right font-mono text-[10px] text-[#aebdc7]">{robot.velocity.toFixed(1)}</span>
-        </button>;
-      })}
-    </div>
-    <div className="mt-6 text-[10px] text-[#607789]">Robot rows use live state from the browser simulation. Selecting a unit opens its map inspector.</div>
+  const { robots, tasks, selectedRobotId, setSelectedRobot } = useStore(useShallow(state => ({ robots: state.robots, tasks: state.tasks, selectedRobotId: state.selectedRobotId, setSelectedRobot: state.setSelectedRobot })));
+  const [search, setSearch] = useState(''), [filter, setFilter] = useState('ALL');
+  const fleet = Object.values(robots), visible = fleet.filter(robot => (filter === 'ALL' || robotCategory(robot) === filter) && `${robot.id} ${robot.state} ${robot.taskId ?? ''}`.toLowerCase().includes(search.toLowerCase()));
+  return <main className="operations-page"><SectionHeading title="Robots" detail="Ten AMRs. Select a robot to inspect live task and route details." /><div className="page-metrics"><PageMetric label="Tracked Robots" value={fleet.length} detail="Browser simulation" /><PageMetric label="Moving" value={fleet.filter(robot => robot.velocity > 0).length} detail="Current motion state" /><PageMetric label="Waiting" value={fleet.filter(robot => robot.state === 'WAITING').length} detail="Holding for safe access" /><PageMetric label="Offline" value={fleet.filter(robot => robot.failed).length} detail="Requires recovery" /></div>
+    <div className="robot-page-content"><section className="dashboard-card operations-table-card"><div className="table-toolbar"><FilterSearch value={search} onChange={setSearch} placeholder="Find robot or task…" /><select aria-label="Filter robot state" value={filter} onChange={event => setFilter(event.target.value)}>{['ALL', 'ACTIVE', 'WAITING', 'IDLE', 'CHARGING', 'FAILED'].map(option => <option key={option} value={option}>{option === 'ALL' ? 'All states' : option.toLowerCase()}</option>)}</select></div><div className="table-scroll"><table className="operations-table"><thead><tr><th>Robot</th><th>Status</th><th>Task / Route</th><th>Payload</th><th>Battery</th><th>Speed</th><th /></tr></thead><tbody>{visible.map(robot => { const task = robot.taskId ? tasks[robot.taskId] : undefined; return <tr key={robot.id} className={selectedRobotId === robot.id ? 'selected-row' : ''}><td><button className="table-robot" onClick={() => setSelectedRobot(robot.id)}><Bot size={15} /><strong>{robot.id}</strong></button></td><td><StateBadge state={robot.state} /><small className="table-detail">{stateLabel(robot.state)}</small></td><td>{task ? task.id : '—'}<small className="table-detail">{task ? `${nodeLabel(task.pickupNodeId)} → ${nodeLabel(task.dropNodeId)}` : robot.waitReason ?? 'Available for work'}</small></td><td>{robot.payload ? 'Loaded' : 'Empty'}</td><td><span className={robot.battery < 20 ? 'amber-text' : ''}>{robot.battery.toFixed(0)}%</span></td><td>{robot.velocity.toFixed(1)} m/s</td><td><button className="icon-button" aria-label={`Inspect ${robot.id}`} onClick={() => setSelectedRobot(robot.id)}><ArrowRight size={15} /></button></td></tr>; })}</tbody></table>{!visible.length && <EmptyState>No robots match this filter.</EmptyState>}</div></section><aside className="robot-page-inspector dashboard-card"><RobotInspector /></aside></div>
   </main>;
 }
-
+const flowLabel = (task: Task) => task.flow.toLowerCase().replaceAll('_', ' ');
 export function TasksView() {
-  const { tasks, robots, metrics } = useStore();
-  const taskList = Object.values(tasks).sort((a, b) => a.id.localeCompare(b.id));
-  const statusText = (task: Task) => task.status.toLowerCase().replace('_', ' ');
-  return <main className={page}>
-    <SectionTitle title="Tasks" detail="Work orders · Live status" />
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-7 mb-10">
-      <Metric title="Total work orders" value={taskList.length} detail="Loaded in this run" />
-      <Metric title="In progress" value={taskList.filter(task => task.status === 'IN_PROGRESS').length} detail="Assigned to robots" />
-      <Metric title="Completed" value={taskList.filter(task => task.status === 'COMPLETED').length} detail="Delivered to packing" />
-      <Metric title="Queued" value={taskList.filter(task => task.status === 'QUEUED').length} detail="Awaiting assignment" />
-    </div>
-    <div className="border-y border-[#20313e]">
-      <div className="grid grid-cols-[75px_minmax(100px,.7fr)_minmax(130px,1fr)_minmax(130px,1fr)_100px_100px] gap-4 py-3 px-2 text-[8px] uppercase tracking-[0.16em] text-[#607789]"><span>Task</span><span>Status</span><span>Pickup</span><span>Destination</span><span>Robot</span><span className="text-right">Duration</span></div>
-      {taskList.map(task => <div key={task.id} className="grid grid-cols-[75px_minmax(100px,.7fr)_minmax(130px,1fr)_minmax(130px,1fr)_100px_100px] gap-4 items-center py-4 px-2 border-t border-[#172733] text-[10px]">
-        <span className="font-mono text-[#e2eaf0]">{task.id}</span><span className="capitalize text-[#aebdc7]">{statusText(task)}</span><span className="text-[#8398a8]">{displayNode(task.pickupNodeId)}</span><span className="text-[#8398a8]">{displayNode(task.dropNodeId)}</span><span className="font-mono text-[#68c5f3]">{task.assignedRobotId ?? 'Unassigned'}</span><span className="text-right font-mono text-[#8398a8]">{task.completedAt !== null ? `${(task.completedAt - task.createdAt).toFixed(1)}s` : task.status === 'IN_PROGRESS' ? `${Math.max(0, metrics.simTime - task.createdAt).toFixed(1)}s` : 'Waiting'}</span>
-      </div>)}
-    </div>
-  </main>;
+  const { tasks, metrics, setSelectedRobot, setActiveView, focusNode } = useStore(useShallow(state => ({ tasks: state.tasks, metrics: state.metrics, setSelectedRobot: state.setSelectedRobot, setActiveView: state.setActiveView, focusNode: state.focusNode })));
+  const [search, setSearch] = useState(''), [filter, setFilter] = useState('ALL');
+  const orders = Object.values(tasks), visible = orders.filter(task => (filter === 'ALL' || task.status === filter) && `${task.id} ${task.pickupNodeId} ${task.dropNodeId} ${task.assignedRobotId ?? ''}`.toLowerCase().includes(search.toLowerCase()));
+  const completed = orders.filter(task => task.status === 'COMPLETED').length;
+  return <main className="operations-page"><SectionHeading title="Tasks" detail="Four logistics flows, with live assignment and payload custody." /><div className="page-metrics"><PageMetric label="Total Work Orders" value={orders.length} detail="This scenario" /><PageMetric label="Completed" value={completed} detail="Delivered successfully" /><PageMetric label="In Progress" value={orders.filter(task => task.status === 'IN_PROGRESS').length} detail="Assigned to a robot" /><PageMetric label="Recovery Required" value={orders.filter(task => task.status === 'RECOVERY_REQUIRED').length} detail="Payload custody retained" /></div><section className="dashboard-card operations-table-card"><div className="table-toolbar"><FilterSearch value={search} onChange={setSearch} placeholder="Find task, robot or station…" /><select aria-label="Filter task status" value={filter} onChange={event => setFilter(event.target.value)}><option value="ALL">All statuses</option>{['QUEUED', 'IN_PROGRESS', 'COMPLETED', 'RECOVERY_REQUIRED'].map(status => <option key={status}>{status}</option>)}</select></div><div className="table-scroll"><table className="operations-table"><thead><tr><th>Task</th><th>Flow</th><th>Pickup</th><th>Destination</th><th>Status</th><th>Robot</th><th>Elapsed</th><th /></tr></thead><tbody>{visible.map(task => <tr key={task.id}><td className="mono">{task.id}<small className="table-detail">Priority {task.priority}</small></td><td className="capitalize">{flowLabel(task)}</td><td>{nodeLabel(task.pickupNodeId)}</td><td>{nodeLabel(task.dropNodeId)}</td><td><span className={`task-badge ${task.status === 'COMPLETED' ? 'green' : task.status === 'RECOVERY_REQUIRED' ? 'red' : task.status === 'IN_PROGRESS' ? 'blue' : 'muted'}`}>{task.status.replaceAll('_', ' ').toLowerCase()}</span></td><td>{task.assignedRobotId ?? 'Unassigned'}{task.custodyRobotId && <small className="table-detail">Custody: {task.custodyRobotId}</small>}</td><td>{task.status === 'QUEUED' ? '—' : `${((task.completedAt ?? metrics.simTime) - task.createdAt).toFixed(1)} s`}</td><td><button className="icon-button" aria-label={`Locate ${task.id}`} onClick={() => { if (task.assignedRobotId) { setSelectedRobot(task.assignedRobotId); setActiveView('Live'); } else focusNode(task.pickupNodeId); }}><ArrowRight size={15} /></button></td></tr>)}</tbody></table>{!visible.length && <EmptyState>No tasks match this filter.</EmptyState>}</div></section></main>;
 }
-
 export function AnalyticsView() {
-  const { robots, tasks, events, metrics } = useStore();
-  const taskList = Object.values(tasks);
-  const completed = taskList.filter(task => task.completedAt !== null);
-  const durations = completed.map(task => (task.completedAt! - task.createdAt));
-  const average = durations.length ? durations.reduce((sum, duration) => sum + duration, 0) / durations.length : null;
-  const taskProgress = taskList.map(task => {
-    const robot = task.assignedRobotId ? robots[task.assignedRobotId] : null;
-    if (task.status === 'COMPLETED') return { task, robot, value: 100, detail: 'Delivered' };
-    if (!robot?.route.length) return { task, robot, value: 0, detail: 'Awaiting assignment' };
-    const path = new MotionPath(robot.route.map(step => ({ x: step.x, y: step.y })), 0);
-    const value = path.totalLength ? Math.min(100, robot.pathProgress / path.totalLength * 100) : 0;
-    return { task, robot, value, detail: `${displayState(robot.state)} · current route leg` };
-  });
-  const stateCounts = states.map(state => ({ state, count: Object.values(robots).filter(robot => robot.state === state).length })).filter(row => row.count > 0);
-  return <main className={page}>
-    <SectionTitle title="Analytics" detail="Derived from this simulation run" />
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-7">
-      <Metric title="Completed orders" value={completed.length} detail="Successfully delivered" />
-      <Metric title="Average cycle time" value={average === null ? 'Pending' : `${average.toFixed(1)}s`} detail={average === null ? 'Calculated after first delivery' : 'Creation to delivery'} />
-      <Metric title="Fleet active" value={`${Object.values(robots).filter(robot => !['IDLE', 'CHARGING'].includes(robot.state)).length} / ${Object.keys(robots).length}`} detail="Current utilization snapshot" />
-      <Metric title="Events recorded" value={events.length} detail="Latest simulation history" />
-    </div>
-    <div className="mt-10 grid grid-cols-1 2xl:grid-cols-2 gap-12">
-      <section>
-        <h2 className={`${label} border-b border-[#20313e] pb-3`}>Work-order progress</h2>
-        <div className="pt-3">{taskProgress.map(({ task, robot, value, detail }) => <div key={task.id} className="py-4 border-b border-[#172733]">
-          <div className="flex items-center justify-between"><div><span className="font-mono text-[10px] text-[#dce7ed]">{task.id}</span><span className="ml-3 text-[9px] text-[#6f8595]">{robot?.id ?? 'Unassigned'}</span></div><span className="font-mono text-[10px] text-[#9fb0bb]">{value.toFixed(0)}%</span></div>
-          <div className="mt-2 h-[2px] bg-[#142330]"><div className="h-full bg-[#2c93c5] transition-all" style={{ width: `${value}%` }} /></div>
-          <div className="mt-2 text-[9px] capitalize text-[#607789]">{detail}</div>
-        </div>)}</div>
-      </section>
-      <section>
-        <h2 className={`${label} border-b border-[#20313e] pb-3`}>Current robot states</h2>
-        <div className="pt-3">{stateCounts.map(row => <div key={row.state} className="grid grid-cols-[minmax(120px,1fr)_40px_2fr] items-center gap-4 py-3 border-b border-[#172733]"><span className="text-[10px] capitalize text-[#aebdc7]">{displayState(row.state)}</span><span className="font-mono text-[10px] text-[#dce7ed]">{row.count}</span><div className="h-[2px] bg-[#142330]"><div className="h-full bg-[#45a9dc]" style={{ width: `${Object.keys(robots).length ? row.count / Object.keys(robots).length * 100 : 0}%` }} /></div></div>)}</div>
-        <div className="mt-5 text-[9px] text-[#607789]">Simulation time {metrics.simTime.toFixed(1)} s · No forecast or production telemetry is included.</div>
-      </section>
-    </div>
-  </main>;
+  const { metrics, incidents, jecs, reservations, setSelectedRobot, setSelectedJec, setActiveView } = useStore(useShallow(state => ({ metrics: state.metrics, incidents: state.incidents, jecs: state.jecs, reservations: state.reservationWindows, setSelectedRobot: state.setSelectedRobot, setSelectedJec: state.setSelectedJec, setActiveView: state.setActiveView })));
+  return <main className="operations-page"><SectionHeading title="Analytics" detail="Measured simulation performance. Charts accumulate during each run." /><div className="page-metrics"><PageMetric label="Completed Tasks" value={metrics.tasksCompleted} detail="This run" /><PageMetric label="Average Cycle" value={metrics.tasksCompleted ? `${metrics.avgTaskTime.toFixed(1)} s` : '—'} detail="Creation to delivery" /><PageMetric label="Deadlocks Resolved" value={metrics.deadlocksResolved} detail="Verified recovery progress" /><PageMetric label="Overlap Alerts" value={metrics.overlapViolations} detail={`Minimum centre separation ${metrics.minimumSeparation.toFixed(2)} m`} /></div><ScenarioResults /><div className="analytics-charts"><ThroughputChart expanded /><UtilizationChart expanded /><WaitChart expanded /></div><div className="analytics-bottom"><section className="dashboard-card analytics-incidents"><div className="card-heading"><h3><AlertTriangle size={16} /> Incidents</h3><span className="subtle">{incidents.filter(incident => !incident.resolved).length} open</span></div>{incidents.length ? incidents.slice(0, 12).map(incident => <div className="incident-row" key={incident.id}><span className={`state-badge ${incident.resolved ? 'green' : 'amber'}`}>{incident.resolved ? 'Resolved' : 'Open'}</span><p>{incident.text}<small>{incident.time.toFixed(1)}s · {incident.kind.replaceAll('_', ' ')}</small></p>{incident.robotId && <button className="icon-button" aria-label={`Inspect ${incident.robotId}`} onClick={() => { setSelectedRobot(incident.robotId!); setActiveView('Live'); }}><ArrowRight size={14} /></button>}</div>) : <EmptyState>No incidents recorded.</EmptyState>}</section><section className="dashboard-card analytics-jecs"><div className="card-heading"><h3><Radio size={16} /> Junction Controllers</h3></div>{jecs.map(jec => <div className="jec-row" key={jec.id}><button onClick={() => { setSelectedJec(jec.id); setActiveView('Live'); }}><strong>{jec.id}</strong><small>{jec.resourceId}</small></button><span className={`state-badge ${jec.online ? 'green' : 'amber'}`}>{jec.online ? 'Online' : 'Fallback'}</span><span className="subtle">{jec.queue.length} waiting</span></div>)}<div className="analytics-reservations"><KeyValue label="Granted / active windows" value={reservations.length} /><KeyValue label="Current conflicts" value={metrics.activeConflicts} /><KeyValue label="Average wait" value={`${metrics.avgWaitTime.toFixed(1)} s`} /></div></section></div></main>;
 }
-
-export const ViewIcon = ({ name }: { name: string }) => {
-  const Icon = name === 'Overview' ? Activity : name === 'Fleet' ? Bot : name === 'Tasks' ? ClipboardList : name === 'Map' ? MapPinned : Activity;
-  return <Icon size={13} strokeWidth={1.6} />;
-};
+function SettingToggle({ label, detail, checked, onChange }: { label: string; detail: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return <label className="setting-row"><span><strong>{label}</strong><small>{detail}</small></span><input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} /><span className="toggle-track" aria-hidden="true" /></label>;
+}
+export function SettingsView() {
+  const { routes, labels, reservations, futures, reducedMotion, quality, networkProfile, setToggle, setQuality, sendCommand, startScenario, setActiveView } = useStore(useShallow(state => ({ routes: state.showRoutes, labels: state.showLabels, reservations: state.showReservations, futures: state.showFutures, reducedMotion: state.reducedMotion, quality: state.quality, networkProfile: state.networkProfile, setToggle: state.setToggle, setQuality: state.setQuality, sendCommand: state.sendCommand, startScenario: state.startScenario, setActiveView: state.setActiveView })));
+  return <main className="operations-page"><SectionHeading title="Settings" detail="Presentation quality, scene overlays and repeatable demonstrations." /><div className="settings-grid"><section className="dashboard-card settings-card"><h2><SlidersHorizontal size={18} /> Scene Display</h2><SettingToggle label="Routes" detail="Show the selected route and other robot paths." checked={routes} onChange={value => setToggle('showRoutes', value)} /><SettingToggle label="Robot Labels" detail="Keep robot identifiers visible in the scene." checked={labels} onChange={value => setToggle('showLabels', value)} /><SettingToggle label="Reservations" detail="Display resource ownership and holding areas." checked={reservations} onChange={value => setToggle('showReservations', value)} /><SettingToggle label="Future Intents" detail="Show predicted robot paths." checked={futures} onChange={value => setToggle('showFutures', value)} /><SettingToggle label="Reduce Camera Motion" detail="Use immediate camera preset changes." checked={reducedMotion} onChange={value => setToggle('reducedMotion', value)} /></section><section className="dashboard-card settings-card"><h2>Performance & Communications</h2><div className="setting-description"><strong>Rendering Quality</strong><p>Low quality prioritizes smooth movement. Balanced enables additional scene detail.</p></div><div className="quality-options"><button className={quality === 'low' ? 'active' : ''} onClick={() => setQuality('low')} aria-pressed={quality === 'low'}>{quality === 'low' && <Check size={14} />}Low / Smooth</button><button className={quality === 'balanced' ? 'active' : ''} onClick={() => setQuality('balanced')} aria-pressed={quality === 'balanced'}>{quality === 'balanced' && <Check size={14} />}Balanced</button></div><div className="setting-description"><strong>Simulated Communications</strong><p>Degraded coordination messages increase conservative waiting at affected resources.</p></div><div className="quality-options"><button className={networkProfile === 'normal' ? 'active' : ''} onClick={() => sendCommand({ type: 'SET_NETWORK_PROFILE', profile: 'normal' })} aria-pressed={networkProfile === 'normal'}>Normal</button><button className={networkProfile === 'degraded' ? 'active' : ''} onClick={() => sendCommand({ type: 'SET_NETWORK_PROFILE', profile: 'degraded' })} aria-pressed={networkProfile === 'degraded'}>Degraded</button></div><div className="prototype-settings-note"><Radio size={18} /><span>Browser visual prototype. Coordination, communications and battery are simulated in this browser.</span></div></section></div><section className="dashboard-card scenarios-card"><h2>Demonstrations</h2><p>Each demonstration starts from a known initial state. Running a scenario replaces the current simulation run.</p><div className="scenario-grid">{SCENARIOS.map(scenario => <button className="scenario-card" key={scenario.id} onClick={() => { startScenario(scenario.id); setActiveView('Live'); }}><span><strong>{scenario.label}</strong><small>{scenario.description}</small></span><Play size={15} /></button>)}</div></section></main>;
+}

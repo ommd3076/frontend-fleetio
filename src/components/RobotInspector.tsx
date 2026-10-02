@@ -1,54 +1,29 @@
-import React from 'react';
+import { ArrowRight, Radio, AlertTriangle, Crosshair, Bot } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
-import { MotionPath } from '../simulation/motionPath';
+import { RobotPreview } from './scene/RobotPreview';
+import { RouteMinimap } from './RouteMinimap';
+import { KeyValue, StateBadge } from './DashboardPrimitives';
+import { nodeLabel, stateLabel } from './dashboardFormatting';
 
-export const RobotInspector: React.FC = () => {
-  const { selectedRobotId, robots, tasks } = useStore();
-  const robot = selectedRobotId ? robots[selectedRobotId] : null;
-  const task = robot?.taskId ? tasks[robot.taskId] : null;
-  const queue = Object.values(tasks).filter(item => item.status === 'QUEUED');
-  const route = robot?.route ?? [];
-  const routeSegments = route.length ? new MotionPath(route.map(step => ({ x: step.x, y: step.y })), 0).segments.length : 0;
-  const first = route[0]?.nodeId.replace('_LEFT_SERVICE', '').replace('_RIGHT_SERVICE', '').replaceAll('_', ' ') ?? 'Route pending';
-  const last = route.at(-1)?.nodeId.replace('_', ' ') ?? 'Route pending';
-
-  return <div className="h-full overflow-y-auto bg-[#050c13] px-[clamp(16px,1.35vw,28px)] py-[clamp(22px,3vh,40px)] text-[#e2eaf0]">
-    <section>
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#71879a]">Robot inspector</h2>
-        {robot && <span className="font-mono text-[11px] text-[#dce7ed]">{robot.id}</span>}
-      </div>
-      {!robot ? <div className="py-5 text-[12px] text-[#8295a4]">Select an AMR on the floorplan to inspect its state and route.</div> : <>
-        <div className="text-[18px] leading-tight font-light capitalize">{robot.state.replaceAll('_', ' ').toLowerCase()}</div>
-        <div className="mt-1 mb-6 text-[10px] uppercase tracking-[0.13em] text-[#55b8f5]">{task?.id ?? 'No active task'}</div>
-        <div className="grid grid-cols-2 gap-y-4 pb-5 border-b border-[#20313e]">
-          <div><div className="text-[9px] uppercase tracking-wider text-[#71879a]">Battery model</div><div className="mt-1 text-[17px] font-light">{robot.battery.toFixed(1)}<small className="text-[11px] text-[#8295a4]">%</small></div></div>
-          <div><div className="text-[9px] uppercase tracking-wider text-[#71879a]">Payload</div><div className="mt-1 text-[13px]">{robot.payload ? 'Loaded' : 'Empty'}</div></div>
-          <div><div className="text-[9px] uppercase tracking-wider text-[#71879a]">Speed</div><div className="mt-1 font-mono text-[12px]">{robot.velocity.toFixed(1)} m/s</div></div>
-          <div><div className="text-[9px] uppercase tracking-wider text-[#71879a]">State dwell</div><div className="mt-1 font-mono text-[12px]">{robot.waitingTime.toFixed(1)} s</div></div>
-          <div><div className="text-[9px] uppercase tracking-wider text-[#71879a]">Distance</div><div className="mt-1 font-mono text-[12px]">{robot.distanceTraveled.toFixed(1)} m</div></div>
-          <div><div className="text-[9px] uppercase tracking-wider text-[#71879a]">Path leg</div><div className="mt-1 font-mono text-[12px]">{route.length ? `${Math.min(routeSegments, robot.currentWaypointIndex + 1)} / ${routeSegments}` : 'Pending'}</div></div>
-        </div>
-        <div className="py-5 border-b border-[#20313e]">
-          <h3 className="text-[9px] uppercase tracking-[0.18em] text-[#71879a] mb-4">Current task</h3>
-          <div className="flex justify-between text-[11px] py-1"><span className="text-[#8295a4]">Task</span><span className="font-mono">{task?.id ?? 'Unassigned'}</span></div>
-          <div className="flex justify-between text-[11px] py-1"><span className="text-[#8295a4]">Pickup</span><span>{task?.pickupNodeId.replace('_LEFT_SERVICE', '').replace('_RIGHT_SERVICE', '') ?? 'Pending assignment'}</span></div>
-          <div className="flex justify-between text-[11px] py-1"><span className="text-[#8295a4]">Destination</span><span>{task?.dropNodeId.replace('_', ' ') ?? 'Pending assignment'}</span></div>
-        </div>
-        <div className="py-5">
-          <h3 className="text-[9px] uppercase tracking-[0.18em] text-[#71879a] mb-3">Route</h3>
-          {route.length ? <div className="font-mono text-[11px] leading-6 text-[#a4b3bf]">{first}<span className="mx-2 text-[#526c7e]">→</span>{last}</div> : <div className="text-[11px] text-[#71879a]">No route assigned</div>}
-          {route.length > 0 && <div className="mt-1 text-[9px] font-mono text-[#617889]">{route.length} graph nodes · selected path shown on map</div>}
-        </div>
-      </>}
-    </section>
-    <div className="h-px bg-[#20313e] my-5" />
-    <section>
-      <div className="flex justify-between items-center mb-4"><h2 className="text-[10px] uppercase tracking-[0.2em] text-[#71879a]">Task queue</h2><span className="font-mono text-[10px] text-[#8295a4]">{queue.length}</span></div>
-      {queue.length ? queue.map(item => <div key={item.id} className="py-3 border-b border-[#172733] last:border-0">
-        <div className="flex justify-between text-[11px]"><span className="font-mono text-[#dce7ed]">{item.id}</span><span className="text-[#8295a4]">P{item.priority}</span></div>
-        <div className="mt-1 text-[10px] text-[#71879a]">{item.pickupNodeId.replace('_LEFT_SERVICE', '').replace('_RIGHT_SERVICE', '')} → {item.dropNodeId.replace('_', ' ')}</div>
-      </div>) : <div className="text-[11px] text-[#71879a]">No queued work</div>}
-    </section>
+function JecInspector() {
+  const { jec, windows, sendCommand, setSelectedRobot } = useStore(useShallow(state => ({ jec: state.jecs.find(item => item.id === state.selectedJecId), windows: state.reservationWindows, sendCommand: state.sendCommand, setSelectedRobot: state.setSelectedRobot })));
+  if (!jec) return null;
+  const grant = windows.find(window => window.resourceId === jec.resourceId);
+  return <div className="rail-content jec-inspector"><div className="inspector-heading"><h2>{jec.id}</h2><span className={`state-badge ${jec.online ? 'green' : 'amber'}`}>{jec.online ? 'Online' : 'Peer fallback'}</span></div><p className="inspector-state">Junction Edge Cell</p><div className="jec-art"><Radio size={46} /><span>{jec.resourceId}</span></div><KeyValue label="Resource" value={jec.resourceId} /><KeyValue label="Authority" value={jec.online ? 'JEC' : 'Peers'} /><KeyValue label="Generation" value={jec.generation} /><KeyValue label="Occupancy" value={jec.occupancy.length ? jec.occupancy.join(', ') : 'Clear'} /><KeyValue label="Reservation" value={jec.reservation ?? 'None'} /><KeyValue label="Congestion" value={typeof jec.congestion === 'number' ? jec.congestion.toFixed(1) : '—'} />{grant && <KeyValue label="Window" value={`${grant.start.toFixed(1)}–${grant.end.toFixed(1)}s`} />}<button className="button full-width" onClick={() => sendCommand({ type: jec.online ? 'DISABLE_JEC' : 'ENABLE_JEC', jecId: jec.id })}>{jec.online ? 'Disable JEC' : 'Restore JEC'}<ArrowRight size={14} /></button><div className="inspector-section"><h3>Incoming Robots</h3>{jec.incoming.length ? jec.incoming.map(item => <button key={item.robotId} className="incoming-row" onClick={() => setSelectedRobot(item.robotId)}><Bot size={14} /><strong>{item.robotId}</strong><span>{item.eta.toFixed(1)}s</span><ArrowRight size={12} /></button>) : <p className="subtle">No approaching robots.</p>}</div><div className="inspector-section"><h3>Waiting Queue</h3>{jec.queue.length ? jec.queue.map((id, index) => <button className="incoming-row" key={id} onClick={() => setSelectedRobot(id)}><span>{index + 1}</span><strong>{id}</strong><ArrowRight size={12} /></button>) : <p className="subtle">Queue clear.</p>}</div></div>;
+}
+function RobotDetails() {
+  const robot = useStore(state => state.selectedRobotId ? state.robots[state.selectedRobotId] : undefined);
+  const task = useStore(state => { const current = state.selectedRobotId ? state.robots[state.selectedRobotId] : undefined; return current?.taskId ? state.tasks[current.taskId] : undefined; });
+  const setActiveView = useStore(state => state.setActiveView), setCamera = useStore(state => state.setCamera), sendCommand = useStore(state => state.sendCommand);
+  if (!robot) return <div className="rail-content inspector-empty"><Bot size={34} /><h2>Robot Inspector</h2><p>Select a robot in the warehouse to inspect its task, route and condition.</p></div>;
+  return <div className="rail-content robot-inspector"><div className="inspector-heading"><h2>{robot.id}</h2><StateBadge state={robot.state} /></div><p className="inspector-state">{stateLabel(robot.state)}</p><div className="robot-preview"><RobotPreview robot={robot} /></div>
+    <div className="battery-row"><span>Battery</span><strong>{robot.battery.toFixed(0)}%</strong></div><div className="battery-track"><div className={robot.battery < 20 ? 'low' : ''} style={{ width: `${Math.max(0, Math.min(100, robot.battery))}%` }} /></div>
+    <div className="robot-details"><KeyValue label="Speed" value={`${robot.velocity.toFixed(1)} m/s`} /><KeyValue label="Current Task" value={task?.id ?? '—'} /><KeyValue label="From" value={nodeLabel(task?.pickupNodeId)} /><KeyValue label="To" value={nodeLabel(task?.dropNodeId ?? (robot.state === 'RETURNING_TO_STAGING' ? robot.homeNodeId : null))} /><KeyValue label="ETA" value={robot.eta === null ? '—' : `${robot.eta.toFixed(0)} s`} /><KeyValue label="Total Tasks" value={robot.tasksCompleted} /><KeyValue label="Wait Time" value={`${robot.waitingTime.toFixed(1)} s`} /><KeyValue label="Payload" value={robot.payload ? 'Carrying package' : 'Empty'} /></div>
+    {robot.waitReason && <div className={`wait-reason ${robot.failed ? 'failure-reason' : ''}`}><AlertTriangle size={14} /><span>{robot.waitReason}</span></div>}
+    <button className="button full-width details-button" onClick={() => setActiveView('Robots')}>View Full Details<ArrowRight size={15} /></button>
+    <div className="inspector-section"><div className="card-heading"><h3>Route Preview</h3><button className="icon-button" title="Follow this robot" aria-label={`Follow ${robot.id}`} onClick={() => setCamera('follow')}><Crosshair size={14} /></button></div><RouteMinimap robot={robot} /><div className="minimap-legend"><span><i className="cyan" />Current</span><span><i className="green" />Resources</span><span><i className="amber" />Destination</span></div></div>
+    <div className="inspector-section robot-actions"><button className={`button full-width ${robot.failed ? 'green-button' : 'danger-soft'}`} onClick={() => sendCommand({ type: robot.failed ? 'RECOVER_ROBOT' : 'FAIL_ROBOT', robotId: robot.id })}>{robot.failed ? 'Recover Robot' : 'Simulate Robot Failure'}</button></div>
   </div>;
-};
+}
+export function RobotInspector() { const selectedJecId = useStore(state => state.selectedJecId); return selectedJecId ? <JecInspector /> : <RobotDetails />; }

@@ -1,42 +1,15 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import process from 'node:process';
-import ts from 'typescript';
-
-const root = process.cwd();
-const assert = (condition, message) => { if (!condition) throw new Error(message); };
-
-async function importTypeScript(relativePath) {
-  const source = fs.readFileSync(path.join(root, relativePath), 'utf8');
-  const javascript = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 }
-  }).outputText.replace("from '../types';", "from 'data:text/javascript,export%20{}';");
-  return import(`data:text/javascript;base64,${Buffer.from(javascript).toString('base64')}`);
+import {assert,runScenario} from './simulation-harness.mjs';
+for(const id of ['junction','narrow','following','detour','fairness','deadlock','jec-outage','network']){
+ const s=runScenario(id,300);assert(s.scenarioProgress.completed,id+' outcome missing');assert(s.metrics.overlapViolations===0,id+' footprint overlap');
+ if(id==='deadlock')assert(s.metrics.deadlocksResolved>0&&s.incidents.some(i=>i.kind==='DEADLOCK'&&i.resolved),'Recovery counted without real progress');
+ if(id==='jec-outage')assert(s.events.some(e=>e.kind==='GRANT'&&e.text.includes('peer fallback')),'No actual peer grant');
+ if(id==='detour')assert(s.blockedEdges.length===0&&s.events.some(e=>e.kind==='DETOUR'&&/travel [0-9.]+ s, predicted queue [0-9.]+ s, fleet delay [0-9.]+ s/.test(e.text)),'No obstruction/route alternative');
+ console.log('COORDINATION_PASS',id,s.metrics.simTime.toFixed(2),s.metrics.deadlocksResolved);
 }
+console.log('COORDINATION_VERIFICATION_OK');
 
-const { applyRightHandLanes, LANE_OFFSET } = await importTypeScript('src/simulation/laneRouting.ts');
-const step = (nodeId, x, y, timeStep) => ({ nodeId, x, y, timeStep });
-const east = applyRightHandLanes([step('a', 0, 0, 0), step('b', 2, 0, 1), step('c', 4, 0, 2), step('d', 6, 0, 3)]);
-const west = applyRightHandLanes([step('d', 6, 0, 0), step('c', 4, 0, 1), step('b', 2, 0, 2), step('a', 0, 0, 3)]);
-const north = applyRightHandLanes([step('a', 0, 0, 0), step('b', 0, 2, 1), step('c', 0, 4, 2), step('d', 0, 6, 3)]);
-const south = applyRightHandLanes([step('d', 0, 6, 0), step('c', 0, 4, 1), step('b', 0, 2, 2), step('a', 0, 0, 3)]);
-assert(Math.abs(east[1].y + LANE_OFFSET) < 1e-6, 'eastbound route is not in its right lane');
-assert(Math.abs(west[1].y - LANE_OFFSET) < 1e-6, 'westbound route is not in its right lane');
-assert(Math.abs(north[1].x - LANE_OFFSET) < 1e-6, 'northbound route is not in its right lane');
-assert(Math.abs(south[1].x + LANE_OFFSET) < 1e-6, 'southbound route is not in its right lane');
-assert(Math.abs(east[1].y - west[1].y) >= 1.2, 'opposing routes do not have physical lane separation');
-console.log('DUAL_LANE_ROUTING_OK');
-
-const worker = fs.readFileSync(path.join(root, 'src/simulation/worker.ts'), 'utf8');
-assert(worker.includes('FUTURE_HORIZON_SECONDS = 3'), 'future horizon is missing');
-assert(worker.includes('updateFutureMap();'), 'future map is not updated in the fixed tick');
-assert(worker.includes('futureTrajectories'), 'future trajectories are not published');
-assert(worker.includes('FUTURE_CLEARANCE'), 'future reservations have no clearance radius');
-console.log('FUTURE_MAP_OK');
-
-assert(worker.includes('findWaitCycle'), 'wait-for cycle detection is missing');
-assert(worker.includes('priorityGrantUntil'), 'temporary right-of-way grant is missing');
-assert(worker.includes('DL resolved:'), 'deadlock resolution is not recorded');
-assert(worker.includes('recordSeparationMetrics'), 'runtime separation is not measured');
-assert(!worker.includes('if (robotOwnsControl) return true'), 'control ownership still bypasses separation logic');
-console.log('DEADLOCK_RESOLUTION_OK');
+const followingSim=(await import('./simulation-harness.mjs')).createSimulation((await import('./simulation-harness.mjs')).WAREHOUSE_LAYOUT);followingSim.dispatch({type:'START_SCENARIO',scenarioId:'following'});let previous=followingSim.snapshot(),slowed=false;for(let i=0;i<60*60;i++){followingSim.step(1/60);const current=followingSim.snapshot();for(const id of ['R01','R02']){const delta=(current.robots[id].velocity-previous.robots[id].velocity)*60;assert(delta>=-.851&&delta<=.751,'Unbounded following acceleration '+id+': '+delta);}if(current.robots.R02.velocity<previous.robots.R02.velocity&&current.robots.R02.state==='MOVING_TO_DROPOFF')slowed=true;assert(!(current.robots.R01.waitReason??'').includes('R02'),'Leading robot held by invalid trailing proposal');previous=current;if(current.scenarioProgress.completed)break;}assert(slowed,'Trailing robot never slowed');
+const crossing=(await import('./simulation-harness.mjs')).createSimulation((await import('./simulation-harness.mjs')).WAREHOUSE_LAYOUT);crossing.dispatch({type:'START_SCENARIO',scenarioId:'junction'});let predictedAt=null,heldAt=null;for(let i=0;i<60*30;i++){crossing.step(1/60);const s=crossing.snapshot();for(const j of s.jecs){assert(j.occupancy.length<=1,'Simultaneous exclusive JEC occupants');if(j.occupancy.length)assert(s.reservations[j.resourceId]===j.occupancy[0],'JEC occupant lost ownership');}predictedAt??=s.events.find(e=>e.kind==='PREDICTED_CONFLICT')?.time??null;heldAt??=s.events.find(e=>e.kind==='WAIT')?.time??null;if(s.scenarioProgress.completed)break;}assert(predictedAt!==null&&heldAt!==null&&predictedAt<heldAt,'Conflict was not predicted before holding');
+console.log('ADVERSARIAL_COORDINATION_OK: predicted crossing, exclusive ownership, trailing speed and bounded endpoints');
+const headOn=(await import('./simulation-harness.mjs')).createSimulation((await import('./simulation-harness.mjs')).WAREHOUSE_LAYOUT);headOn.dispatch({type:'START_SCENARIO',scenarioId:'deadlock'});let prior=headOn.snapshot();for(let i=0;i<60*120;i++){headOn.step(1/60);const state=headOn.snapshot();for(const robot of Object.values(state.robots)){const acceleration=(robot.velocity-prior.robots[robot.id].velocity)*60;assert(acceleration>=-.851&&acceleration<=.751,'Opposing footprint braking unbounded: '+robot.id+' '+acceleration);}prior=state;if(state.scenarioProgress.completed)break;}assert(prior.scenarioProgress.completed,'Braking hid genuine wait-cycle recovery');console.log('OPPOSING_BRAKING_VERIFICATION_OK');
+for(const id of ['junction','narrow','deadlock','following','blocked-aisle']){const motion=(await import('./simulation-harness.mjs')).createSimulation((await import('./simulation-harness.mjs')).WAREHOUSE_LAYOUT);motion.dispatch({type:'START_SCENARIO',scenarioId:id});let old=motion.snapshot(),speeds=Object.fromEntries(Object.keys(old.robots).map(id=>[id,0]));for(let i=0;i<60*120;i++){motion.step(1/60);const state=motion.snapshot();for(const robot of Object.values(state.robots)){const physicalSpeed=Math.hypot(robot.position.x-old.robots[robot.id].position.x,robot.position.y-old.robots[robot.id].position.y)*60,physicalAcceleration=(physicalSpeed-speeds[robot.id])*60;assert(physicalAcceleration>=-.87&&physicalAcceleration<=.77,'Actual pose acceleration unbounded '+id+' '+robot.id+' '+physicalAcceleration);assert(Math.abs(physicalSpeed-robot.velocity)<.02,'Pose/velocity disagreement '+id+' '+robot.id);speeds[robot.id]=physicalSpeed;}old=state;if(state.scenarioProgress.completed)break;}assert(old.scenarioProgress.completed,'Physical motion probe outcome missing '+id);}console.log('ACTUAL_POSE_MOTION_OK: heading transitions, reroutes, endpoints and opposing braking');

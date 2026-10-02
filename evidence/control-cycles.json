@@ -1,0 +1,54 @@
+{
+  "cycles": [
+    {
+      "cycle": 1,
+      "play": "Simulation Running\n00:00:00",
+      "pause": "Simulation Paused\n00:00:00",
+      "stop": "Simulation Stopped\n00:00:01",
+      "reset": "Simulation Ready\n00:00:00"
+    },
+    {
+      "cycle": 2,
+      "play": "Simulation Running\n00:00:00",
+      "pause": "Simulation Paused\n00:00:00",
+      "stop": "Simulation Stopped\n00:00:01",
+      "reset": "Simulation Ready\n00:00:00"
+    },
+    {
+      "cycle": 3,
+      "play": "Simulation Running\n00:00:00",
+      "pause": "Simulation Paused\n00:00:00",
+      "stop": "Simulation Stopped\n00:00:01",
+      "reset": "Simulation Ready\n00:00:00"
+    },
+    {
+      "cycle": 4,
+      "play": "Simulation Running\n00:00:00",
+      "pause": "Simulation Paused\n00:00:00",
+      "stop": "Simulation Stopped\n00:00:01",
+      "reset": "Simulation Ready\n00:00:00"
+    },
+    {
+      "cycle": 5,
+      "play": "Simulation Running\n00:00:00",
+      "pause": "Simulation Paused\n00:00:00",
+      "stop": "Simulation Stopped\n00:00:01",
+      "reset": "Simulation Ready\n00:00:00"
+    }
+  ],
+  "allocations": [
+    {
+      "engine": "three.js r186",
+      "fleetDpr": "1.000",
+      "fleetDrawCalls": "96",
+      "fleetFps": "60.3",
+      "fleetFrameP95": "19.9",
+      "fleetGeometries": "97",
+      "fleetTextures": "8",
+      "fleetTriangles": "71286"
+    },
+    {
+      "engine": "three.js r186"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "warehouse.glb": "6df746483419b9f027c270bf36278e6cfb763f307083ae92f9857c1f9ab87241",
+  "agv.obj": "86c717ad02ba5d8c8841ebf134f7d5572ae330099eb1d04bcf71296375da9c7e",
+  "shelf.dae": "ba61f8170176822e736d0bf0e1f7445b31e202518ac5749d41d1f6787acb75f7",
+  "textures/Box.jpg": "6a66b766b084a9b419fb163cae53cdcbf66d03bd9158f82a4f020184ea0834b9",
+  "textures/Box_roughness.jpg": "c8cc65e36c3861be92df67f93f4521402ae176e42a899417f2a37bf63df7a3dd",
+  "textures/Rail_diffuseOriginal.jpg": "326706842264fed72893228cc75bf007df4cb9912ea41202ebae41136aa56fdc",
+  "textures/Rail_Mask.jpg": "8f1685e4d7201299b37cd681aeaabc554fd3cdddb910c88d276bfc16e058761b",
+  "textures/Rail_metallic.jpg": "d4d20c7d898efc152d4e464030300cdf2837e2dd69c9c325d1b23b76acad2d6c",
+  "textures/Rail_smoothness.jpg": "ac1b83bffcdebed9afb0cc6718e31db64064582c6f96338191321c0a983707be",
+  "textures/Shelf_diffuseOriginal.jpg": "6b0894539d90af41983ef70ea3f63c1b38ea3a6b5fab77b0076f81f8babe3044",
+  "textures/Shelf_Mask.jpg": "44ba7cd9229d956b2eb16a946b856980a5683cc5b4e524a46638a91a81285d9f",
+  "textures/Shelf_metallic.jpg": "6b4685f20d5061d92607fbbe204976ce487f63e9ffeed46dfc786cdf4330af27",
+  "textures/Shelf_smoothness.jpg": "2823fbba4d6fe4c8fdccd193a38f189ade26a46052ddd094b1fbdf6af800a81d"
+}

@@ -1,13 +1,14 @@
 {
-  "name": "new-folder--2-",
+  "name": "fleetio",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "lint": "oxlint --format json src scripts",
+    "preview": "vite preview",
+    "test": "node scripts/verify-motion.mjs && node scripts/verify-ten-robot.mjs && node scripts/verify-coordination.mjs && node scripts/verify-runtime.mjs && node scripts/verify-engine.mjs && node scripts/verify-integration.mjs && node scripts/verify-scene-assets.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

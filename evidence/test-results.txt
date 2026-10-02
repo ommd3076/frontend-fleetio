@@ -1,0 +1,49 @@
+
+> fleetio@0.0.0 test
+> node scripts/verify-motion.mjs && node scripts/verify-ten-robot.mjs && node scripts/verify-coordination.mjs && node scripts/verify-runtime.mjs && node scripts/verify-engine.mjs && node scripts/verify-integration.mjs && node scripts/verify-scene-assets.mjs
+
+MOTION_VERIFICATION_OK: arbitrary corners, position/tangent continuity, degenerate paths and U-turn preservation
+TEN_ROBOT_VERIFICATION_OK: all 20 tasks, four flows, ten robots delivered/returned; 744.02 simulated seconds
+COORDINATION_PASS junction 17.02 0
+COORDINATION_PASS narrow 31.02 0
+COORDINATION_PASS following 36.02 0
+COORDINATION_PASS detour 33.02 0
+COORDINATION_PASS fairness 33.02 0
+COORDINATION_PASS deadlock 36.02 1
+COORDINATION_PASS jec-outage 17.02 0
+COORDINATION_PASS network 17.02 0
+COORDINATION_VERIFICATION_OK
+ADVERSARIAL_COORDINATION_OK: predicted crossing, exclusive ownership, trailing speed and bounded endpoints
+OPPOSING_BRAKING_VERIFICATION_OK
+ACTUAL_POSE_MOTION_OK: heading transitions, reroutes, endpoints and opposing braking
+RUNTIME_PASS robot-failure 59.02
+RUNTIME_PASS payload-recovery 40.02
+RUNTIME_PASS blocked-aisle 27.02
+RUNTIME_PASS charging 121.02
+RUNTIME_VERIFICATION_OK: lifecycle, generation, pause/stop/reset, seeds, custody, blockage and stale grants
+ADVERSARIAL_RUNTIME_OK: completed-task failure, no-route/clear, depletion and both charging returns
+BLOCKED_NARROW_REGRESSION_OK
+GUIDED_VERIFICATION_OK: 13 event-verified saved outcomes; 1205.00 total simulated seconds
+PAYLOAD_PIVOT_MOTION_OK: explicit operator recovery, bounded actual pose speed through true U-turn
+ENGINE_GENERATION_QUEUE_OK: singleton, five queued resets, stale sequence, worker restart
+{"result":"PARENT_INTEGRATION_OK","geometrySamples":14879,"allRobots":10,"completedFlows":4}
+{
+  "passed": true,
+  "robotMetres": [
+    0.8066349923610687,
+    0.2775479853153229,
+    1.092469036579132
+  ],
+  "floorMetres": [
+    16.000013286548214,
+    0.000003484228110885609,
+    46.15000291027907
+  ],
+  "diffuseTextures": 3,
+  "overviewTriangles": 4785,
+  "overviewMetres": [
+    0.806439995765686,
+    0.27724699942336883,
+    1.092166006565094
+  ]
+}

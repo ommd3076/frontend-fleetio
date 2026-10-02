@@ -1,0 +1,72 @@
+[
+  {
+    "expected": "Guided demonstration",
+    "shown": "Guided demonstration",
+    "pass": true
+  },
+  {
+    "expected": "Normal logistics",
+    "shown": "Normal logistics",
+    "pass": true
+  },
+  {
+    "expected": "Junction conflict",
+    "shown": "Junction conflict",
+    "pass": true
+  },
+  {
+    "expected": "Narrow passage",
+    "shown": "Narrow passage",
+    "pass": true
+  },
+  {
+    "expected": "Safe following",
+    "shown": "Safe following",
+    "pass": true
+  },
+  {
+    "expected": "Alternate route",
+    "shown": "Alternate route",
+    "pass": true
+  },
+  {
+    "expected": "Priority aging",
+    "shown": "Priority aging",
+    "pass": true
+  },
+  {
+    "expected": "Deadlock recovery",
+    "shown": "Deadlock recovery",
+    "pass": true
+  },
+  {
+    "expected": "JEC outage",
+    "shown": "JEC outage",
+    "pass": true
+  },
+  {
+    "expected": "Robot failure",
+    "shown": "Robot failure",
+    "pass": true
+  },
+  {
+    "expected": "Payload recovery",
+    "shown": "Payload recovery",
+    "pass": true
+  },
+  {
+    "expected": "Blocked aisle",
+    "shown": "Blocked aisle",
+    "pass": true
+  },
+  {
+    "expected": "Degraded communications",
+    "shown": "Degraded communications",
+    "pass": true
+  },
+  {
+    "expected": "Battery & charging",
+    "shown": "Battery & charging",
+    "pass": true
+  }
+]

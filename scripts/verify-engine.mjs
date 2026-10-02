@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+const state={generation:-1,sequence:-1};
+let count=0,instance;
+class FakeWorker {constructor(){count++;instance=this;}postMessage(command){this.lastCommand=command;}terminate(){this.terminated=true;}receive(generation,sequence){this.onmessage({data:{type:'STATE_UPDATE',payload:{generation,sequence}}});}}
+globalThis.Worker=FakeWorker;
+globalThis.__fleetTestStore={getState:()=>state,setState:patch=>Object.assign(state,patch)};
+const source=fs.readFileSync('src/simulation/engine.ts','utf8');
+const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace(/import \{ useStore \} from '..\/store';/, 'const useStore=globalThis.__fleetTestStore;').replace("new URL('./worker.ts', import.meta.url)","new URL('https://test.invalid/worker.js')");
+const engine=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+engine.initEngine();engine.initEngine();assert.equal(count,1);
+instance.receive(1,1);assert.equal(state.generation,1);
+for(let i=0;i<5;i++)engine.postSimulationCommand({type:'RESET'});
+for(let i=2;i<=5;i++)instance.receive(i,5);
+assert.equal(state.generation,1,'intermediate queued reset snapshot accepted');
+instance.receive(6,1);assert.equal(state.generation,6);
+instance.receive(5,99);assert.equal(state.generation,6);
+instance.receive(6,0);assert.equal(state.sequence,1);
+instance.receive(6,2);assert.equal(state.sequence,2);
+instance.onerror({message:'test worker failure'});assert.equal(state.runtimeError,'test worker failure');assert(instance.terminated);
+engine.postSimulationCommand({type:'RESET'});assert.equal(count,2);instance.receive(1,1);assert.equal(state.generation,-1);instance.receive(2,1);assert.equal(state.generation,2);
+engine.disposeEngine();delete globalThis.__fleetTestStore;delete globalThis.Worker;
+console.log('ENGINE_GENERATION_QUEUE_OK: singleton, five queued resets, stale sequence, worker restart');
