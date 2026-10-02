@@ -8,7 +8,7 @@ Approved browser-only ten-orange-AGV prototype. Parent verifies worker results i
 - [x] G6 Empty/duplicate/U-turn/45/90/135 degree motion continuity.
 - [x] G7 Six views, search, all controls, preview and mini-map; reset generations.
 - [x] G8 Browser at 1440p,4K,narrow; no model errors; frame performance measured.
-- [ ] G9 Build/lint pass, exact revision published and live checks pass.
+- [x] G9 Build/lint pass, exact revision published and live checks pass.
 
 
-Evidence: VERIFICATION_3D.md and evidence/ contain simulation, browser and performance records. Late manual recovery is verified in simulation and the production preview. G9 remains open until the corrected revision is hosted and checked.
+Evidence: VERIFICATION_3D.md and evidence/ contain simulation, browser and performance records. Late manual recovery is verified in simulation, the production preview and the hosted release. Final presentation build/lint and destination checks also pass.

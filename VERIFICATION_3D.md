@@ -45,4 +45,6 @@ Screenshots in `evidence/` document the desktop composition, mobile drawer and c
 
 ## Release checks
 
-Build, lint and the full suite pass on the corrected source in the Git publication checkout. The production preview also replays late operator recovery: one completed task, both affected robots home and all ten idle. The corrective hosted revision is being checked before closing G9.
+Build, lint and the full suite pass on the corrected source in the Git publication checkout. The production preview also replays late operator recovery: one completed task, both affected robots home and all ten idle. Corrective simulation revision71cdc1e20d94a9ebfb0840dc3718102d1dce12ce deployed successfully through Vercel. The public URL serves the same compiled worker-CTDACov0.js and prepared assets as the verified checkout. Hosted late recovery was replayed after delivery: R04 returned at00:05:00 and recoveredR01 returned at00:05:17, with allten idle, taskcompletedonce and zero overlap alerts. Allsix destinations were traversed again. No hosted asset/runtime console errors were recorded.
+
+Final presentation corrections suppress ETA while failed, label unavailable robots as requiring recovery, and show the current route destination—including returning bay, charging position and held refuge. These do not change the frozen simulation core. Build/lint pass; browser checks verify the real return/charging states. Setup and short demo instructions are in README.md.
