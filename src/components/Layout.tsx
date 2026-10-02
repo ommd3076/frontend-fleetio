@@ -12,6 +12,7 @@ import { SceneControls, SceneViewControls } from './SceneControls';
 import { WAREHOUSE_LAYOUT } from '../simulation/layout';
 import { initEngine } from '../simulation/engine';
 import { observeSystemMotion, savedReducedMotion } from '../presentationPreferences';
+import { DockDirectory } from './DockInformation';
 
 function RuntimeNotice() {
   const runtimeError = useStore(state => state.runtimeError);
@@ -21,7 +22,7 @@ function RuntimeNotice() {
 }
 function MapDirectory() {
   const jecs = useStore(state => state.jecs), setSelectedJec = useStore(state => state.setSelectedJec), focusNode = useStore(state => state.focusNode);
-  return <section className="map-directory dashboard-card"><div className="card-heading"><h3><MapPin size={15} /> Warehouse Resources</h3><span className="subtle">16 × 46 m</span></div><div className="resource-directory">{jecs.map(jec => <button key={jec.id} onClick={() => { focusNode(jec.resourceId); setSelectedJec(jec.id); }}><Radio size={15} /><span><strong>{jec.id}</strong><small>{jec.resourceId}</small></span><i className={`status-dot ${jec.online ? 'green' : 'amber'}`} /></button>)}{WAREHOUSE_LAYOUT.stations.filter(station => station.kind !== 'staging').map(station => <button key={station.id} onClick={() => focusNode(station.id)}><MapPin size={15} /><span><strong>{station.label}</strong><small>{station.kind}</small></span></button>)}</div></section>;
+  return <section className="map-directory dashboard-card"><div className="card-heading"><h3><MapPin size={15} /> Warehouse Resources</h3><span className="subtle">16 × 46 m</span></div><div className="resource-directory">{jecs.map(jec => <button key={jec.id} onClick={() => { focusNode(jec.resourceId); setSelectedJec(jec.id); }}><Radio size={15} /><span><strong>{jec.id}</strong><small>{jec.resourceId}</small></span><i className={`status-dot ${jec.online ? 'green' : 'amber'}`} /></button>)}{WAREHOUSE_LAYOUT.stations.filter(station => station.kind !== 'staging' && station.kind !== 'charging').map(station => <button key={station.id} onClick={() => focusNode(station.id)}><MapPin size={15} /><span><strong>{station.label}</strong><small>{station.kind}</small></span></button>)}</div><DockDirectory /></section>;
 }
 function LiveDashboard({ mapMode = false }: { mapMode?: boolean }) {
   const [drawer, setDrawer] = useState<'fleet' | 'inspector' | null>(null);

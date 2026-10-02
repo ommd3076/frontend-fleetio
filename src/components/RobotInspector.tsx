@@ -5,6 +5,7 @@ import { RobotPreview } from './scene/RobotPreview';
 import { RouteMinimap } from './RouteMinimap';
 import { KeyValue, StateBadge } from './DashboardPrimitives';
 import { nodeLabel, stateLabel, robotDestination } from './dashboardFormatting';
+import { HomeDockInformation } from './DockInformation';
 
 function JecInspector() {
   const { jec, windows, sendCommand, setSelectedRobot } = useStore(useShallow(state => ({ jec: state.jecs.find(item => item.id === state.selectedJecId), windows: state.reservationWindows, sendCommand: state.sendCommand, setSelectedRobot: state.setSelectedRobot })));
@@ -23,6 +24,7 @@ function RobotDetails() {
     {robot.waitReason && <div className={`wait-reason ${robot.failed ? 'failure-reason' : ''}`}><AlertTriangle size={14} /><span>{robot.waitReason}</span></div>}
     <button className="button full-width details-button" onClick={() => setActiveView('Robots')}>View Full Details<ArrowRight size={15} /></button>
     <div className="inspector-section"><div className="card-heading"><h3>Route Preview</h3><button className="icon-button" title="Follow this robot" aria-label={`Follow ${robot.id}`} onClick={() => setCamera('follow')}><Crosshair size={14} /></button></div><RouteMinimap robot={robot} /><div className="minimap-legend"><span><i className="cyan" />Current</span><span><i className="green" />Resources</span><span><i className="amber" />Destination</span></div></div>
+    <HomeDockInformation robot={robot} />
     <div className="inspector-section robot-actions"><button className={`button full-width ${robot.failed ? 'green-button' : 'danger-soft'}`} onClick={() => sendCommand({ type: robot.failed ? 'RECOVER_ROBOT' : 'FAIL_ROBOT', robotId: robot.id })}>{robot.failed ? 'Recover Robot' : 'Simulate Robot Failure'}</button></div>
   </div>;
 }

@@ -1,0 +1,16 @@
+.home-dock-info p { color: #d2e0eb; font-size: 12px; margin: 12px 0; }
+.home-dock-info p small { display: block; color: var(--muted); margin-top: 5px; font-size: 10px; }
+.dock-note { display: block; margin-top: 10px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.dock-directory { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 6px; margin-top: 12px; }
+.dock-resource { display: flex; align-items: center; gap: 8px; border: 1px solid #2b3e4d; border-radius: 8px; padding: 9px; background: #14212d; text-align: left; transition: border-color var(--motion-control) var(--ease-settle), background-color var(--motion-control) var(--ease-settle); }
+.dock-resource > svg { color: #76b3c5; flex: none; }
+.dock-resource > span:first-of-type { flex: 1; min-width: 0; }
+.dock-resource strong { display: block; font-size: 10px; color: #d6e5ed; }
+.dock-resource small { display: block; font-size: 8px; margin-top: 3px; color: var(--muted); }
+.dock-resource .state-badge { font-size: 8px; padding: 3px 5px; }
+.dock-resource:hover { background: #203442; border-color: #58869a; }
+.dock-resource:active { background: #182b38; }
+.dock-resource[data-dock-state='charging'] { border-color: #a68445; }
+.dock-resource[data-dock-state='fault'] { border-color: #a05a64; }
+.map-directory { overflow: auto; scrollbar-width: thin; scrollbar-color: #334353 transparent; }
+.setting-row:has(input:disabled) { cursor: default; }
