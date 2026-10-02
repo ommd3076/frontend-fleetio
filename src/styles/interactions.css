@@ -1,0 +1,94 @@
+/* No layout changes: interaction feedback stays within each control's bounds. */
+.fleet-app :is(
+  .brand, .main-nav button, .button, .icon-button,
+  .segmented button, .camera-buttons button, .overlay-buttons button,
+  .scenario-heading, .scenario-card, .quality-options button,
+  .resource-directory > button, .search-results button, .incoming-row,
+  .jec-row > button
+) {
+  transition:
+    background-color var(--motion-control) var(--ease-settle),
+    border-color var(--motion-control) var(--ease-settle),
+    color var(--motion-fast) ease,
+    box-shadow var(--motion-control) var(--ease-settle),
+    opacity var(--motion-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fleet-app :is(.fleet-search, .filter-search, select) {
+  transition:
+    border-color var(--motion-control) var(--ease-settle),
+    background-color var(--motion-control) var(--ease-settle),
+    box-shadow var(--motion-control) var(--ease-settle);
+}
+
+.fleet-app :is(.fleet-search, .filter-search):focus-within {
+  border-color: #66baf0;
+  box-shadow: 0 0 0 3px #57aef51a;
+}
+
+.fleet-app :is(button, input, select):focus-visible {
+  outline: 2px solid #85caff;
+  outline-offset: 3px;
+}
+
+.fleet-app .main-nav button.active {
+  box-shadow: inset 0 1px 0 #91c6ff12, inset 0 -1px 0 #65b6f94d;
+}
+
+.fleet-app .search-results button[aria-selected='true'] {
+  background-color: #27445c;
+  box-shadow: inset 0 0 0 1px #79bded80;
+  color: #eff8ff;
+}
+
+.fleet-app .scenario-heading > svg:last-child {
+  transition: transform var(--motion-control) var(--ease-settle);
+}
+.fleet-app .scenario-heading[aria-expanded='true'] > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.fleet-app .toggle-track,
+.fleet-app .toggle-track::before {
+  transition:
+    transform var(--motion-control) var(--ease-settle),
+    background-color var(--motion-control) var(--ease-settle);
+}
+
+.fleet-app .setting-row input:focus-visible + .toggle-track {
+  outline: 2px solid #85caff;
+  outline-offset: 4px;
+}
+
+.fleet-app :is(.operations-table tbody tr, .metric-card, .summary-card, .chart-card) {
+  transition:
+    background-color var(--motion-control) var(--ease-settle),
+    border-color var(--motion-control) var(--ease-settle);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fleet-app .brand:hover { opacity: .88; }
+  .fleet-app :is(.button, .segmented button, .quality-options button):not(:disabled):hover {
+    box-shadow: inset 0 1px 0 #b2d4f017;
+  }
+  .fleet-app :is(.scenario-card, .resource-directory > button):not(:disabled):hover {
+    box-shadow: inset 0 1px 0 #badcff12;
+  }
+  .fleet-app :is(.metric-card, .summary-card, .chart-card):hover {
+    border-color: #344657;
+  }
+  .fleet-app .operations-table tbody tr:hover { background-color: #25405835; }
+}
+
+.fleet-app :is(
+  .button, .icon-button, .segmented button, .camera-buttons button,
+  .overlay-buttons button, .scenario-card, .quality-options button,
+  .resource-directory > button, .search-results button, .incoming-row
+):not(:disabled):active {
+  box-shadow: inset 0 1px 3px #0005;
+}
+
+.fleet-app :is(.main-nav button, .scenario-heading):not(:disabled):active {
+  background-color: #233a50;
+}
