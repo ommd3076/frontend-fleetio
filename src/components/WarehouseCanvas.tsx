@@ -10,6 +10,7 @@ import type { ResourceDefinition, Robot, StationDefinition } from '../types';
 import { loadFleetModels } from './scene/assets';
 import type { FleetModels, ModelPart } from './scene/assets';
 import { RobotModel } from './scene/RobotModel';
+import { DockingStations } from './scene/DockingStations';
 
 const colors = { active: '#6adfc3', route: '#59bafb', waiting: '#ffc968', idle: '#94a5ae', failed: '#ff646c' };
 const statusColor = (robot: Robot) => robot.failed ? colors.failed : robot.state === 'WAITING' ? colors.waiting : robot.state === 'IDLE' ? colors.idle : colors.active;
@@ -77,8 +78,7 @@ function Station({ station }: { station: StationDefinition }) {
       <mesh position={[0, .67, 0]} castShadow><boxGeometry args={[2.15, .15, .55]} /><meshStandardMaterial color="#29383d" metalness={.6} roughness={.45} /></mesh>
       {[-.87, .87].map(x => <mesh key={x} position={[x, .3, 0]}><boxGeometry args={[.075, .6, .48]} /><meshStandardMaterial color="#c8a040" /></mesh>)}
     </group>}
-    {charging && <mesh position={[0, .36, .8]}><boxGeometry args={[.62, .72, .20]} /><meshStandardMaterial color="#405f65" metalness={.4} roughness={.7} /></mesh>}
-    {!staging && <Label color={color} position={[0, 1.55, .95]}>{station.label}</Label>}
+    {!staging && !charging && <Label color={color} position={[0, 1.55, .95]}>{station.label}</Label>}
   </group>;
 }
 
@@ -100,7 +100,7 @@ function StaticDetails() {
         object.position.set(station.x - .96 + i * .16, .764, station.y + .95); object.rotation.set(Math.PI / 2, 0, 0); object.scale.set(1, 1, 1); object.updateMatrix(); rollers.current?.setMatrixAt(index++, object.matrix);
       }
     });
-    layout.stations.forEach((station, i) => {
+    conveyorStations.forEach((station, i) => {
       const staging = station.kind === 'staging', charging = station.kind === 'charging';
       color.set(staging ? '#568faf' : charging ? '#daa944' : station.kind === 'receiving' ? '#5bafff' : '#65d4ac');
       object.position.set(station.x, .026, station.y); object.rotation.set(-Math.PI / 2, 0, 0); object.scale.set(1, 1, 1); object.updateMatrix(); rings.current?.setMatrixAt(i, object.matrix); rings.current?.setColorAt(i, color);
@@ -112,8 +112,8 @@ function StaticDetails() {
     <instancedMesh ref={bollards} args={[undefined, undefined, layout.racks.length * 4]} castShadow><boxGeometry args={[.10, .4, .10]} /><meshStandardMaterial color="#d9a63b" roughness={.75} /></instancedMesh>
     <instancedMesh ref={pads} args={[undefined, undefined, layout.racks.length]}><boxGeometry args={[1, 1, 1]} /><meshStandardMaterial color="#384047" roughness={.9} /></instancedMesh>
     <instancedMesh ref={rollers} args={[undefined, undefined, conveyorStations.length * 13]}><cylinderGeometry args={[.035, .035, .50, 8]} /><meshStandardMaterial color="#697477" metalness={.75} roughness={.4} /></instancedMesh>
-    <instancedMesh ref={rings} args={[undefined, undefined, layout.stations.length]}><ringGeometry args={[.5, .53, 32]} /><meshBasicMaterial color="#ffffff" transparent opacity={.65} /></instancedMesh>
-    <instancedMesh ref={zones} args={[undefined, undefined, layout.stations.length]}><boxGeometry args={[1, 1, 1]} /><meshBasicMaterial color="#ffffff" transparent opacity={.12} depthWrite={false} /></instancedMesh>
+    <instancedMesh ref={rings} args={[undefined, undefined, conveyorStations.length]}><ringGeometry args={[.5, .53, 32]} /><meshBasicMaterial color="#ffffff" transparent opacity={.65} /></instancedMesh>
+    <instancedMesh ref={zones} args={[undefined, undefined, conveyorStations.length]}><boxGeometry args={[1, 1, 1]} /><meshBasicMaterial color="#ffffff" transparent opacity={.12} depthWrite={false} /></instancedMesh>
   </group>;
 }
 
@@ -335,7 +335,7 @@ function Scene({ models }: { models: FleetModels }) {
     <directionalLight position={[18, 27, 9]} intensity={3.1} color="#fff2df" castShadow shadow-mapSize={[1536, 1536]} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={40} shadow-camera-bottom={-40} shadow-camera-far={100} shadow-bias={-.00015} />
     <primitive object={models.warehouse} dispose={null} />
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[8, -.09, 23]} receiveShadow><planeGeometry args={[19, 49]} /><meshStandardMaterial color="#29313a" roughness={1} /></mesh>
-    <LaneMarkings /><Shelves models={models} /><StaticDetails /><RefugeMarkers />
+    <LaneMarkings /><Shelves models={models} /><StaticDetails /><RefugeMarkers /><DockingStations />
     {layout.stations.map(s => <Station key={s.id} station={s} />)}
     {layout.resources.map(r => <ResourceMarker key={r.id} resource={r} />)}
     {ids.split(',').filter(Boolean).map(id => <group key={id}><DynamicLine robotId={id} /><DynamicLine robotId={id} future /><FutureGhosts robotId={id} /><LiveRobot id={id} models={models} /></group>)}
