@@ -2,6 +2,8 @@
 
 A browser visual simulation of ten orange warehouse AGVs. React, Three.js and a deterministic Web Worker render and coordinate a 16 × 46 metre warehouse. This is a demonstration of MAPF-style coordination; it does not claim optimal routing or implement a robotics backend.
 
+[Open the hosted prototype](https://frontend-fleetio.vercel.app/).
+
 ## Run locally
 
 ```sh
@@ -22,6 +24,8 @@ npm test
 Open Live, select a scenario and press Run. Guided demonstration advances only when required simulation outcomes occur. Individual scenarios can be restarted independently. Pause preserves the run, Stop preserves the final view, Play after Stop starts afresh, and Reset restores the selected fixture. Speed changes simulated time.
 
 Select a robot in the scene or roster to inspect its task, battery, payload and route. Use Overview, Top and Follow camera controls; drag to orbit and scroll to zoom. Map expands the warehouse. Search locates robots, tasks, stations and JECs. Analytics uses measured simulation records.
+
+For a short walkthrough, start Junction conflict, then Robot failure and Payload recovery from Settings. Normal logistics runs for about 12.4 simulated minutes; Guided demonstration takes about 20.1 simulated minutes. At 2×, real time is approximately half those durations on a responsive browser.
 
 Payload recovery waits for an explicit Recover robot action. A failed robot retains custody until recovered. Manual controls also expose robot failure, JEC outage/restoration, passage blockage/clearing and degraded communications.
 

@@ -11,4 +11,4 @@ Approved browser-only ten-orange-AGV prototype. Parent verifies worker results i
 - [ ] G9 Build/lint pass, exact revision published and live checks pass.
 
 
-Evidence: VERIFICATION_3D.md and evidence/ contain simulation, browser and performance records. G9 remains open until the exact revision is hosted and checked.
+Evidence: VERIFICATION_3D.md and evidence/ contain simulation, browser and performance records. Late manual recovery is verified in simulation and the production preview. G9 remains open until the corrected revision is hosted and checked.

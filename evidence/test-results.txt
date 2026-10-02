@@ -25,6 +25,7 @@ ADVERSARIAL_RUNTIME_OK: completed-task failure, no-route/clear, depletion and bo
 BLOCKED_NARROW_REGRESSION_OK
 GUIDED_VERIFICATION_OK: 13 event-verified saved outcomes; 1205.00 total simulated seconds
 PAYLOAD_PIVOT_MOTION_OK: explicit operator recovery, bounded actual pose speed through true U-turn
+LATE_OPERATOR_RECOVERY_OK: safe connected route, bounded actual poses, both returned at 190.82 s
 ENGINE_GENERATION_QUEUE_OK: singleton, five queued resets, stale sequence, worker restart
 {"result":"PARENT_INTEGRATION_OK","geometrySamples":14879,"allRobots":10,"completedFlows":4}
 {

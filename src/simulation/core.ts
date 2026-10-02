@@ -46,13 +46,28 @@ export function createSimulation(layout:WarehouseLayout,seed=12345){
   const normal=(a:RouteStep,b:RouteStep)=>{const edge=graph.edges[eid(a.nodeId,b.nodeId)],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy);const offset=edge?.narrow||a.y<5||b.y<5||a.y>41||b.y>41||a.x<1||a.x>15||b.x<1||b.x>15?0:.48;return l?{x:dy/l*offset,y:-dx/l*offset}:{x:0,y:0};};
   return points.map((p,i)=>{if(!i||i===points.length-1)return p;const n=normal(points[i-1],p),m=normal(p,points[i+1]),same=n.x*m.x+n.y*m.y>.15;return{...p,x:p.x+(same?n.x:n.x+m.x),y:p.y+(same?n.y:n.y+m.y)};});
  }
+ function connectedRoute(r:Robot,goal:string,preferred?:string,avoidRobots:string[]=[]){
+  // A graph route does not prove that an arbitrary stopped pose can reach its
+  // first node. Validate that lead-in with the same swept footprint as motion.
+  const anchors=Object.values(graph.nodes).filter(n=>n.type!=='RACK'&&distance(r.position,n)<=3.6).sort((a,b)=>distance(r.position,a)-distance(r.position,b)||a.id.localeCompare(b.id));
+  const ids=[...new Set([preferred??nearest(r.position),...anchors.map(n=>n.id)].filter((id):id is string=>!!id))];
+  for(const start of ids){if(start===goal&&start!==(preferred??nearest(r.position))&&distance(r.position,graph.nodes[start])>.01)continue;const raw=findRoute(start,goal,r.id,true,avoidRobots);if(!raw)continue;const path=offsetRoute(raw),lead=distance(r.position,path[0]);
+   if(lead>.01)path.unshift({nodeId:start,...r.position,timeStep:0});else path[0]={...path[0],...r.position};
+   if(lead>.01){const motion=new MotionPath(path,.45),limit=Math.min(motion.totalLength,lead+.5),initial=motion.getPointAtDistance(0).heading;let clear=true;
+    for(let turn=0;turn<=1;turn+=.05)if(!safeStatic(r.position,r.heading+angle(initial-r.heading)*turn)){clear=false;break;}
+    for(let d=0;clear&&d<=limit+.025;d+=.025){const sample=motion.getPointAtDistance(Math.min(d,limit));if(!safeStatic(sample.position,sample.heading)||avoidRobots.some(id=>{const other=robots[id];return other&&distance(sample.position,other.position)<Math.min(1.2,distance(r.position,other.position)-.01);})){clear=false;}}
+    if(!clear)continue;
+   }
+   return{start,raw,path};
+  }return null;
+ }
  function setGoal(r:Robot,goal:string,mode:RobotMotionState,detour=false,startOverride?:string,avoidRobots:string[]=[]){
-  const start=startOverride??nearest(r.position);if(!start)return false;let raw=findRoute(start,goal,r.id,true,avoidRobots);
+  const connected=connectedRoute(r,goal,startOverride,avoidRobots),start=connected?.start??startOverride??nearest(r.position);if(!start)return false;let raw=connected?.raw??null;
   if(scenarioActive()==='narrow'&&mode==='MOVING_TO_DROPOFF'&&!blocked.has('NARROW_1')&&!blocked.has(eid('J_1_3','J_2_3'))){
    const a=r.id==='R01'?'J_1_3':'J_2_3',b=r.id==='R01'?'J_2_3':'J_1_3',first=findRoute(start,a,r.id,false),last=findRoute(b,goal,r.id,false);if(first&&last)raw=[...first,...last];
   }
   if(!raw){r.state='WAITING';r.resumeState=mode;r.waitReason='No clear route';r.waitKind='NO_ROUTE';r.blockedBy=null;r.speed=r.velocity=0;r.route=[];r.eta=null;routes[r.id]={path:new MotionPath([r.position]),goal,mode,dwell:0};emit('NO_ROUTE',r.id+' holds: no route to '+goal,r.id);return false;}
-  const path=offsetRoute(raw);if(path.length&&distance(r.position,path[0])>.01)path.unshift({nodeId:start,x:r.position.x,y:r.position.y,timeStep:0});else if(path.length){path[0]={...path[0],...r.position};}
+  const path=connected&&raw===connected.raw?connected.path:offsetRoute(raw);if(path.length&&distance(r.position,path[0])>.01)path.unshift({nodeId:start,x:r.position.x,y:r.position.y,timeStep:0});else if(path.length){path[0]={...path[0],...r.position};}
   r.route=path;r.pathProgress=0;r.currentWaypointIndex=0;r.state=mode;r.resumeState=null;r.waitReason=null;r.waitKind=null;r.blockedBy=null;
   routes[r.id]={path:new MotionPath(path,.45),goal,mode,dwell:0};r.eta=routes[r.id].path.totalLength/1.35;
   if(detour){const travel=path.slice(1).reduce((sum,p,i)=>sum+distance(path[i],p)/1.35,0);const wait=path.slice(1).reduce((sum,p,i)=>sum+Object.values(robots).filter(o=>o.id!==r.id&&o.state!=='IDLE'&&segmentDistance(o.position,path[i],p)<1.1).reduce((n,o)=>n+(o.state==='WAITING'?9:2),0),0);const fleetDelay=path.slice(1).reduce((sum,p,i)=>sum+Object.values(robots).filter(o=>o.id!==r.id&&o.state!=='IDLE'&&segmentDistance(o.position,path[i],p)<1.1).reduce((n,o)=>n+Math.min(4,o.waitingTime)*.5,0),0);const direct=findRoute(start,goal,r.id,false)??raw;const baselineTravel=direct.slice(1).reduce((sum,p,i)=>sum+distance(direct[i],p)/1.35,0);const baselineWait=direct.slice(1).reduce((sum,p,i)=>sum+Object.values(robots).filter(o=>o.id!==r.id&&o.state!=='IDLE'&&segmentDistance(o.position,direct[i],p)<1.1).reduce((n,o)=>n+(o.state==='WAITING'?9:2),0),0);emit('DETOUR',r.id+' chooses '+path.map(p=>p.nodeId).filter(n=>n.startsWith('J_')).join(' → ')+'; travel '+travel.toFixed(1)+' s, predicted queue '+wait.toFixed(1)+' s, fleet delay '+fleetDelay.toFixed(1)+' s; distance-only route travel '+baselineTravel.toFixed(1)+' s with queue '+baselineWait.toFixed(1)+' s.',r.id);}
@@ -128,7 +143,7 @@ export function createSimulation(layout:WarehouseLayout,seed=12345){
     for(const other of Object.values(robots)){if(other.id===r.id||Math.abs(angle(other.heading-target.heading))<.35&&other.velocity>0)continue;
      const forward=(other.position.x-r.position.x)*dir.x+(other.position.y-r.position.y)*dir.y;if(forward<=0)continue;
      const stopping=other.velocity*other.velocity/(2*.85),otherRoute=routes[other.id];
-     for(const fraction of [0,.5,1]){const future=otherRoute&&!other.failed?otherRoute.path.getPointAtDistance(other.pathProgress+stopping*fraction):{position:other.position,heading:other.heading};if(overlaps(sample.position,rt.mode==='RECOVERING'?r.heading:sample.heading,future.position,stopping<.000001?other.heading:future.heading,.055)){obstacle=true;predictiveBlocker=other.id;break;}}if(obstacle)break;
+     for(const fraction of [0,.5,1]){const future=otherRoute&&!other.failed?otherRoute.path.getPointAtDistance(other.pathProgress+stopping*fraction):{position:other.position,heading:other.heading};const recovering=otherRoute?.mode==='RECOVERING';if(overlaps(sample.position,rt.mode==='RECOVERING'?r.heading:sample.heading,future.position,recovering||stopping<.000001?other.heading:future.heading,recovering?.15:.055)){obstacle=true;predictiveBlocker=other.id;break;}}if(obstacle)break;
     }if(obstacle){desired=Math.min(desired,Math.sqrt(2*.85*Math.max(0,ahead-.16)));break;}
    }
    for(let ahead=.08;ahead<=brakingDistance+.08;ahead+=.08){const p=rt.path.getPointAtDistance(r.pathProgress+ahead).position;const denied=resourceAt(p,r).some(key=>grants[key]?.robotId!==r.id&&! (rt.mode==='RECOVERING'&&insideResource(r,key)));if(denied){desired=Math.min(desired,Math.sqrt(2*.85*Math.max(0,ahead-.16)));break;}}
@@ -158,7 +173,7 @@ export function createSimulation(layout:WarehouseLayout,seed=12345){
    const behind=yielding.route.filter(p=>!blocker||(p.x-yielding.position.x)*(blocker.position.x-yielding.position.x)+(p.y-yielding.position.y)*(blocker.position.y-yielding.position.y)<-.1).sort((a,b)=>distance(a,yielding.position)-distance(b,yielding.position))[0]?.nodeId;
    const start=behind??nearest(yielding.position);if(!start)continue;
    const refuges=Object.values(graph.nodes).filter(n=>n.type==='REFUGE').sort((a,b)=>distance(yielding.position,a)-distance(yielding.position,b));
-   const refuge=refuges.find(n=>!Object.values(robots).some(o=>o.id!==yielding.id&&distance(o.position,n)<1.5)&&findRoute(start,n.id,yielding.id,true,avoid));if(!refuge)continue;
+   const refuge=refuges.find(n=>!Object.values(robots).some(o=>o.id!==yielding.id&&distance(o.position,n)<1.5)&&connectedRoute(yielding,n.id,start,avoid));if(!refuge)continue;
    if(!existing)incident('DEADLOCK','Wait cycle '+cycle.join(' → ')+' → '+r.id+'; '+yielding.id+' yields to '+refuge.id,yielding.id);
    if(setGoal(yielding,refuge.id,'RECOVERING',true,start,avoid)){
     const rt=routes[yielding.id];rt.resumeGoal=existing?old.resumeGoal:old.goal;rt.resumeMode=existing?old.resumeMode:old.mode;rt.recoveryStart=existing?old.recoveryStart:yielding.distanceTraveled;rt.recoveryBlocker=existing?old.recoveryBlocker:blocker?.id;rt.blockerDistance=existing?old.blockerDistance:blocker?.distanceTraveled;rt.lastRecoveryAttempt=time;

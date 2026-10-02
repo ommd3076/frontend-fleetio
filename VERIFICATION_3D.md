@@ -12,9 +12,13 @@ The regression suite checks degenerate paths and arbitrary turns; exclusive owne
 
 `verify-engine.mjs` exercises the worker wrapper with a mock worker: one instance, five queued resets, obsolete generations/sequences and worker restart. This is separate from the real worker checks performed in the browser.
 
-Final simulation core SHA-256: B148322B1346E6B01EFFEE45FF0DAFDE79232ECCF66478A7E54CB9DE1CD5F945. Layout SHA-256: 7C387C0A70DBD9A207A32A71AD731992D94156FCCF14644A7D55D49CD4FFD307.
+Final simulation core SHA-256: 2F91B3D731E5F597DA266B2FFD6325BAC680814E5D054BBBEF7A8492B5E8054A. Layout SHA-256: 7C387C0A70DBD9A207A32A71AD731992D94156FCCF14644A7D55D49CD4FFD307.
 
 Fresh independent review completed all 12 isolated coordination/failure scenarios with zero overlaps, and all 13 guided stages. The finite fleet completes at 744.02 simulated seconds; the guided suite completes at 1205.00 simulated seconds. Actual pose traces stay approximately between -0.851 and +0.752 m/s², excluding explicit failure/depletion stops. Parent geometry verification checks 14,879 sampled fleet frames. The last detour amendment corrects pickup metadata to the robot's physical J_2_2 position. The entire suite was rerun against that final core in the publication checkout and exited 0. Exact logs are in evidence/test-results.txt, evidence/build-results.txt and evidence/lint-results.txt.
+
+Late manual recovery regression: run the robot-failure fixture to 160 simulated seconds, then explicitly recover R01. The recovered robot and reassigned R04 both actually return home by 190.82 seconds, with the task completed exactly once. Recovery anchors require a clear local connector; braking accounts for the recovering robot's body heading. Independent SAT checks and 60 Hz pose traces verify no rack/robot/floor collision, teleport or abrupt stop.
+
+Broader independent manual tests on the same final core completed the full 20-task workload after moving/carrying failures at 2, 20, 60 and 11.7 seconds, with actual home arrivals at 825.82, 804.92, 749.52 and 707.92 seconds respectively. Custody remains consistent. Independent SAT sampled 59,334 fleet frames across these cases and the late fixture, with zero rack/floor/robot overlaps; dense 60 Hz recovery traces verify acceleration and no teleport. evidence/independent-recovery.json records commands and results.
 
 ## Browser evidence
 
@@ -41,4 +45,4 @@ Screenshots in `evidence/` document the desktop composition, mobile drawer and c
 
 ## Release checks
 
-Pending exact-revision publication and hosted verification.
+Build, lint and the full suite pass on the corrected source in the Git publication checkout. The production preview also replays late operator recovery: one completed task, both affected robots home and all ten idle. The corrective hosted revision is being checked before closing G9.
