@@ -1,0 +1,160 @@
+{
+  "navigation": [
+    {
+      "heading": "Analytics",
+      "view": "Analytics"
+    },
+    {
+      "heading": "Tasks",
+      "view": "Tasks"
+    },
+    {
+      "heading": "Robots",
+      "view": "Robots"
+    },
+    {
+      "heading": "Settings",
+      "view": "Settings"
+    },
+    {
+      "heading": "R02",
+      "view": "Live"
+    }
+  ],
+  "controlCycles": [
+    {
+      "geometry": "90",
+      "models": "loaded",
+      "status": "STOPPED",
+      "time": "00:00:00"
+    },
+    {
+      "geometry": "90",
+      "models": "loaded",
+      "status": "STOPPED",
+      "time": "00:00:00"
+    },
+    {
+      "geometry": "90",
+      "models": "loaded",
+      "status": "STOPPED",
+      "time": "00:00:00"
+    },
+    {
+      "geometry": "90",
+      "models": "loaded",
+      "status": "STOPPED",
+      "time": "00:00:00"
+    },
+    {
+      "geometry": "90",
+      "models": "loaded",
+      "status": "STOPPED",
+      "time": "00:00:00"
+    }
+  ],
+  "performance": [
+    {
+      "buffer": [
+        908,
+        614
+      ],
+      "css": [
+        908,
+        614
+      ],
+      "engine": "three.js r186",
+      "fleetDpr": "1.000",
+      "fleetDrawCalls": "104",
+      "fleetFps": "56.3",
+      "fleetFrameP95": "19.8",
+      "fleetGeometries": "93",
+      "fleetTextures": "8",
+      "fleetTriangles": "74464",
+      "status": "RUNNING",
+      "viewport": [
+        1440,
+        900
+      ]
+    },
+    {
+      "buffer": [
+        1384,
+        794
+      ],
+      "css": [
+        3186,
+        1828
+      ],
+      "engine": "three.js r186",
+      "fleetDpr": "0.435",
+      "fleetDrawCalls": "110",
+      "fleetFps": "56.6",
+      "fleetFrameP95": "19.5",
+      "fleetGeometries": "99",
+      "fleetTextures": "8",
+      "fleetTriangles": "74516",
+      "status": "RUNNING",
+      "viewport": [
+        3840,
+        2160
+      ]
+    },
+    {
+      "buffer": [
+        1375,
+        799
+      ],
+      "css": [
+        1906,
+        1108
+      ],
+      "engine": "three.js r186",
+      "fleetDpr": "0.722",
+      "fleetDrawCalls": "103",
+      "fleetFps": "56.8",
+      "fleetFrameP95": "20.4",
+      "fleetGeometries": "95",
+      "fleetTextures": "8",
+      "fleetTriangles": "74384",
+      "status": "RUNNING",
+      "viewport": [
+        2560,
+        1440
+      ]
+    }
+  ],
+  "mobile": {
+    "viewport": [
+      390,
+      844
+    ],
+    "overflow": false,
+    "focusTrap": "Shift+Tab from close moves to final action",
+    "escape": "closes and restores Inspector button"
+  },
+  "motion": {
+    "normalControls": "190ms",
+    "normalData": "360ms",
+    "reduced": "none/0s",
+    "rememberedAfterReload": true
+  },
+  "dockDirectory": {
+    "count": 12,
+    "homeBay7Selected": "R07"
+  },
+  "keyboardSearch": {
+    "ArrowDown": "R02",
+    "Enter": "R02 inspected",
+    "highlight": "rgb(39, 68, 92)"
+  },
+  "charging": {
+    "robot": "R01",
+    "station": "CHG_1",
+    "state": "CHARGING",
+    "speed": 0,
+    "battery": 9,
+    "home": "Ready",
+    "paused": true
+  }
+}

@@ -29,6 +29,14 @@ For a short walkthrough, start Junction conflict, then Robot failure and Payload
 
 Payload recovery waits for an explicit Recover robot action. A failed robot retains custody until recovered. Manual controls also expose robot failure, JEC outage/restoration, passage blockage/clearing and degraded communications.
 
+## Docks and presentation motion
+
+Each of the ten robots has a physical home dock at its staging bay. Click a dock to locate its bay and inspect its occupant; Map includes a directory of all ten home docks and both chargers. The inspector also provides Locate Home Dock. Status comes from the robot's footprint and state: Ready, Occupied, Charging or Fault. Home docks show parking; only Charge 1 and Charge 2 replenish simulated battery. Hardware remains outside robot turning footprints and navigation paths.
+
+Controls use brief hover, press and focus transitions. Panels, drawers and new events have restrained entrances; battery/progress bars and utilization update smoothly from measured values. Settings → Reduce Motion disables these effects and makes camera changes immediate. The preference survives reloads, and the operating system's reduced-motion preference takes precedence. Charging lights pulse only while an actual robot is charging and the simulation is running.
+
+Search supports Arrow Up/Down and Enter, Escape dismisses results, and Ctrl/Cmd+K focuses search. Dragging the warehouse preserves selection; clicking a robot or dock selects it.
+
 ## Architecture
 
 - src/types.ts defines common snapshots and commands.

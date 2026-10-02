@@ -1,0 +1,20 @@
+
+> fleetio@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 2461 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.63 kB │ gzip:   0.38 kB
+dist/assets/worker-CTDACov0.js     36.56 kB
+dist/assets/index-xlr2mPWH.css     47.70 kB │ gzip:  11.10 kB
+dist/assets/index-DpH3u0vj.js   1,310.50 kB │ gzip: 361.72 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 893ms
