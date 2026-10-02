@@ -11,6 +11,7 @@ import { DashboardCharts } from './DashboardCharts';
 import { SceneControls, SceneViewControls } from './SceneControls';
 import { WAREHOUSE_LAYOUT } from '../simulation/layout';
 import { initEngine } from '../simulation/engine';
+import { observeSystemMotion, savedReducedMotion } from '../presentationPreferences';
 
 function RuntimeNotice() {
   const runtimeError = useStore(state => state.runtimeError);
@@ -59,6 +60,9 @@ function LiveDashboard({ mapMode = false }: { mapMode?: boolean }) {
 }
 export function Layout() {
   const activeView = useStore(state => state.activeView);
+  const reducedMotion = useStore(state => state.reducedMotion);
+  const status = useStore(state => state.simulationStatus);
   useEffect(() => { initEngine(); }, []);
-  return <div className="fleet-app"><Header /><RuntimeNotice /><div className="app-body">{(activeView === 'Live' || activeView === 'Map') && <LiveDashboard mapMode={activeView === 'Map'} />}{activeView === 'Analytics' && <AnalyticsView />}{activeView === 'Tasks' && <TasksView />}{activeView === 'Robots' && <FleetView />}{activeView === 'Settings' && <SettingsView />}</div></div>;
+  useEffect(() => observeSystemMotion(systemReducedMotion => useStore.setState({ systemReducedMotion, reducedMotion: systemReducedMotion || savedReducedMotion() })), []);
+  return <div className="fleet-app" data-reduced-motion={String(reducedMotion)} data-status={status}><Header /><RuntimeNotice /><div className="app-body">{(activeView === 'Live' || activeView === 'Map') && <LiveDashboard mapMode={activeView === 'Map'} />}{activeView === 'Analytics' && <AnalyticsView />}{activeView === 'Tasks' && <TasksView />}{activeView === 'Robots' && <FleetView />}{activeView === 'Settings' && <SettingsView />}</div></div>;
 }
