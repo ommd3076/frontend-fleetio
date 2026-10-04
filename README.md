@@ -7,6 +7,7 @@ A browser visual simulation of ten orange warehouse AGVs. React, Three.js and a 
 ## Run locally
 
 ```sh
+node --version # Node 22.12 or newer
 npm ci
 npm run dev
 ```
@@ -51,3 +52,10 @@ Reset clears bounded event/metric histories and increases snapshot generation. T
 ## Verification and limits
 
 See GATES_3D.md for acceptance and recorded release evidence. Scenario success must follow actual tasks, motion and coordination. Browser performance depends on the GPU and resolution; the verification report records measured results rather than treating a successful build as visual proof.
+
+## Production release
+
+See [production setup](docs/PRODUCTION.md), [existing-project deployment](docs/DEPLOYMENT.md), [demo guide](docs/DEMO.md), [limitations](docs/LIMITATIONS.md), and [release notes](docs/RELEASE_NOTES.md).
+
+Run npm run verify:build after building and npm run package:release to generate the static ZIP and SHA-256 manifest in release/. The Git source remains the input for the existing Vercel project.
+
