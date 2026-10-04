@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint --format json src scripts",
     "preview": "vite preview",
-    "test": "node scripts/verify-motion.mjs && node scripts/verify-ten-robot.mjs && node scripts/verify-coordination.mjs && node scripts/verify-runtime.mjs && node scripts/verify-engine.mjs && node scripts/verify-integration.mjs && node scripts/verify-scene-assets.mjs && node scripts/verify-presentation.mjs"
+    "test": "node scripts/verify-motion.mjs && node scripts/verify-ten-robot.mjs && node scripts/verify-coordination.mjs && node scripts/verify-runtime.mjs && node scripts/verify-engine.mjs && node scripts/verify-integration.mjs && node scripts/verify-scene-assets.mjs && node scripts/verify-presentation.mjs",
+    "verify:build": "node scripts/verify-build.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
