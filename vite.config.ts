@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     host: true,
     watch: {
-      ignored: ['**/dist/**', '**/.git/**']
+      ignored: ['**/dist/**', '**/.git/**', '**/.publish/**', '**/.local-archive/**', '**/release/**', '**/.unlazy/**']
     }
   },
   plugins: [
@@ -15,3 +15,4 @@ export default defineConfig({
     tailwindcss(),
   ],
 })
+
